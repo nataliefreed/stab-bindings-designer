@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+
+<script src="https://code.jquery.com/jquery-git.js"></script>
+  <meta charset="utf-8">
+  <title>Stab Bindings Designer</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/2.4.2/cytoscape.js"></script>
+
+  <script src="js/graphs.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div class="row clearfix">
+    <div class="col-md-12 column">
+      <h1>
+        Stab Bindings Designer
+      </h1>
+    </div>
+  </div>
+
+  <div class="row clearfix top-space">
+    <div class="col-md-10 column"><div id="cy"></div></div>
+    <div class="col-md-1 column">
+    <div class="btn-toolbar">
+
+      <button class="btn btn-primary btn-l" id="toggleModeButton">Switch to Animate Mode</button>
+
+
+      <button class="btn btn-default" id="deleteButton">Delete selected</button>
+      <button class="btn btn-default" id="clearAllButton">Clear All</button>
+
+
+      <button class="btn btn-default btn-l" id="downloadButton">Download</button>
+    </div>
+    </div>
+  </div>
+
+  <div class="row clearfix">
+    <div class="col-md-5 column">
+      <h3 id="connectedStatus" class="text-danger">not fully connected</h3>
+    </div>
+    <div class="col-md-7 column top-space">
+      <p>Click to add a hole</p>
+      <p>Click on an existing hole or stitch to select it</p>
+      <p>Select one hole, then another to connect them with a stitch</p>
+      <p>The delete key or the delete button will remove a selected hole or stitch</p>
+      <p>The spacebar deselects any selected hole or stitch</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

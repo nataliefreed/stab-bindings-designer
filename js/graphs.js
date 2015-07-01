@@ -1,0 +1,568 @@
+$(function(){ // on dom ready
+
+    var editMode = true;
+
+    var cy = cytoscape({
+        container: $('#cy')[0],
+
+        style: cytoscape.stylesheet()
+            .selector('node')
+            .css({
+                'content': 'data(name)',
+                'text-valign': 'center',
+                'color': 'white',
+                'text-outline-width': 2,
+                'text-outline-color': '#888',
+                'background-color': '#888',
+                'shape': 'circle',
+                'width': 15,
+                'height': 15
+            })
+            .selector('node:selected')
+            .css({
+                'background-color': '#FFD633'
+            })
+            .selector('edge:selected')
+            .css({
+                'line-color': '#FFD633'
+            })
+            .selector('[?isVisited]')
+            .css({
+                'line-color': '#B200B2',
+                'background-color': '#B200B2'
+            })
+            .selector('[?isReachable]')
+            .css({
+                'line-color': '#66FF33',
+                'background-color': '#66FF33'
+            }),
+//  .selector('edge[?isBridgeEdge]')
+//     .css({
+//        'line-color': '#BB2A2A'
+//      }),
+
+        zoomingEnabled: false,
+        userZoomingEnabled: false,
+        panningEnabled: false,
+        userPanningEnabled: false,
+        boxSelectionEnabled: false,
+        selectionType: 'single',
+
+        elements: {
+            nodes: [ ],
+            edges: [ ]
+        },
+
+        layout: {
+            name: 'preset',
+            padding: 10
+        }
+    });
+
+    var addNode = function(x, y) {
+        var node = cy.add({
+            group: "nodes",
+            data: {},
+            renderedPosition: {x: x, y: y}
+        });
+        console.log("added node " + node.id() + " at " + x + "," + y);
+        return node;
+    }
+
+    var addEdge = function(source, target) {
+        var edge = cy.add({group: "edges", data: {source: source.id(), target: target.id()}});
+        console.log("added edge " + edge.id());
+        return edge;
+    }
+
+    var addEdgeByID = function(source, target) {
+        var edge = cy.add({group: "edges", data: {source: source, target: target}});
+        console.log("added edge " + edge.id());
+        return edge;
+    }
+
+    //check if graph is fully connected
+    var updateConnected = function(graph) {
+        var displayText = $('#connectedStatus');
+
+        var numComponents = getNumComponents(graph);
+        console.log("number of components: " + numComponents);
+        if(numComponents <= 1) {
+            displayText.text("fully connected");
+            displayText.removeClass("text-danger");
+            displayText.addClass("text-success");
+        }
+        else {
+            displayText.text("not fully connected");
+            displayText.addClass("text-danger");
+            displayText.removeClass("text-success");
+        }
+    }
+
+    var unselectAll = function() {
+        var selected = cy.$(':selected');
+        console.log(selected.length);
+        for(var i=0;i<selected.length;i++) {
+            selected[i].unselect();
+            console.log(selected[i].id() + " deselected");
+        }
+    };
+
+    var deleteSelected = function() {
+        var selected = cy.$(':selected');
+        if(selected.length > 0) {
+            cy.remove(selected[0]);
+        }
+    };
+
+    var clearAll = function() {
+        var collection = cy.elements();
+        cy.remove(collection);
+    };
+
+    var downloadDataUri = function(options) {
+        if (!options.url)
+            options.url = "https://download-data-uri.appspot.com/";
+        $('<form method="post" action="' + options.url
+        + '" style="display:none"><input type="hidden" name="filename" value="'
+        + options.filename + '"/><input type="hidden" name="data" value="'
+        + options.data + '"/></form>').appendTo('body').submit().remove();
+    }
+
+    //Bridge finding
+    var scratchNamespace = "_bridgeFinding";
+
+    //initialize some scratch space
+    var initInfo = function(eles) {
+        eles.forEach(function(ele) {
+            ele.scratch(scratchNamespace,{});
+        });
+    };
+
+    //remove the scratch space
+    var removeInfo = function(eles) {
+        eles.forEach(function(ele) { ele.removeScratch(scratchNamespace); });
+    };
+
+    //get the scratch info
+    var info = function(ele) {
+        return ele.scratch(scratchNamespace);
+    };
+
+    //set an info field on each
+    var setInfoForEach = function(eles,key,value) {
+        eles.forEach(function(ele) { info(ele)[key] = value; });
+    };
+
+    //set a data field on each
+    var setDataForEach = function(eles,key,value) {
+        eles.forEach(function(ele) { ele.data(key,value); });
+    };
+
+    //print some debug info for graph?
+    var debugEles = function(eles) {
+        console.log("Elements:");
+        for(var i = 0; i < eles.length; i++) {
+            var e = eles[i];
+            if(e.isEdge()) console.log(e.id()+": "+e.source().id()+"->"+e.target().id());
+            if(e.isNode()) console.log(e.id());
+        }
+    };
+    var eleStr = function(e) {
+        if(e.isEdge()) return (e.id()+"("+e.source().id()+"->"+e.target().id()+")");
+        if(e.isNode()) return (e.id());
+    };
+    var elesStr = function(eles) {
+        var result = "[";
+        for(var i = 0; i < eles.length; i++) {
+            if(i !== 0) result += ", ";
+            result += eleStr(eles[i]);
+        }
+        result += "]";
+        return result;
+    };
+
+    //to use as filter
+    //is it a node?
+    var isNode = function(i, ele) { return ele.isNode(); };
+
+    //is it a tree edge? (filter)
+    var isTreeEdge = function(j,ele) { return info(ele).isTreeEdge; };
+
+    var treeNeighbors = function(node) {
+        var nodes = [];
+        node.connectedEdges(isTreeEdge).forEach(function(edge) {
+            if(edge.source() != node) nodes.push(edge.source());
+            if(edge.target() != node) nodes.push(edge.target());
+        });
+        return nodes;
+    };
+    var setPreorders = function(tree) {
+        var setNodePreorder = function(node, next) {
+            var ni = info(node);
+            if("preorder" in ni) return;
+            ni.preorder = next++;
+            treeNeighbors(node).forEach(function(child) {
+                next = setNodePreorder(child, next);
+            });
+            return next;
+        };
+        tree.nodes().forEach(function(root) { setNodePreorder(root, 1); });
+    };
+    var setPostorders = function(tree) {
+        var roots = [];
+        var setNodePostorder = function(node, next) {
+            var ni = info(node);
+            if("postorder" in ni) return next;
+            ni.postorder = null;
+            treeNeighbors(node).forEach(function(node) {
+                next = setNodePostorder(node, next);
+            });
+            ni.postorder = next++;
+            return next;
+        };
+        tree.nodes().forEach(function(seed) {
+            if(!("postorder" in info(seed)))
+                roots.push(seed);
+            setNodePostorder(seed,1);
+        });
+        return roots;
+    };
+    var orientEdges = function(graph) {
+        graph.edges().forEach(function(edge) {
+            var source = edge.source();
+            var target = edge.target();
+            var ei = info(edge);
+            if(info(source).postorder > info(target).postorder) {
+                ei.parent = source;
+                ei.child = target;
+            }
+            else {
+                ei.parent = target;
+                ei.child = source;
+            }
+        });
+    };
+    var treeChildren = function(node) {
+        var children = [];
+        var parentPostorder = info(node).postorder;
+        node.connectedEdges(isTreeEdge).forEach(function(edge) {
+            var ei = info(edge);
+            if(ei.child != node)
+                children.push(ei.child);
+        });
+        return children;
+    };
+    var treeParent = function(node) {
+        var parent;
+        var childPostorder = info(node).postorder;
+        node.connectedEdges(isTreeEdge).forEach(function(edge) {
+            var ei = info(edge);
+            if(ei.parent != node) {
+                parent = ei.parent;
+                return false;
+            }
+        });
+        return parent;
+    };
+
+    // Call visitor(node,children) on each node after calling visitor on all children
+    var postorderApply = function(roots,visitor) {
+        var applyVisitor = function(node) {
+            var children = treeChildren(node);
+            children.forEach(applyVisitor);
+            visitor(node, children);
+        };
+        roots.forEach(applyVisitor);
+    };
+    // Call visitor(node,parent) on each node after calling visitor on parent
+    var preorderApply = function(roots,visitor) {
+        var applyVisitor = function(node) {
+            var parent = treeParent(node);
+            visitor(node,parent);
+            var children = treeChildren(node);
+            children.forEach(function(child) { applyVisitor(child, node); });
+        };
+        roots.forEach(applyVisitor);
+    };
+    var setNumDescendents = function(roots) {
+        var setNodeNumDescendents = function(node, children) {
+            var nodeInfo = info(node);
+            if("numDescendents" in nodeInfo) {
+                console.log("Visitor applied multiple times!!!");
+                return 1;
+            }
+            var totalNd = 1;
+            children.forEach(function(child) { totalNd += info(child).numDescendents; });
+            nodeInfo.numDescendents = totalNd;
+        };
+        postorderApply(roots,setNodeNumDescendents);
+    };
+    var setLabelRange = function(roots) {
+        postorderApply(roots,function(node,children) {
+            var ni = info(node);
+            ni.L = ni.postorder;
+            ni.H = ni.postorder;
+            children.forEach(function(child) {
+                var ci = info(child);
+                if(ci.L < ni.L) ni.L = ci.L;
+                if(ci.H > ni.H) ni.H = ci.H;
+            });
+            node.connectedEdges().forEach(function(edge) {
+                if(isTreeEdge(-1,edge)) return;
+                var neighbor;
+                if(edge.source() == node) neighbor = edge.target();
+                if(edge.target() == node) neighbor = edge.source();
+                var po = info(neighbor).postorder;
+                if(po < ni.L) ni.L = po;
+                if(po > ni.H) ni.H = po;
+            });
+        });
+    };
+
+    var setBridges = function(graph) {
+        initInfo(graph);
+        var tree = graph.kruskal();
+        setInfoForEach(graph.edges(),"isTreeEdge",false);
+        setInfoForEach(tree.edges(),"isTreeEdge",true);
+        var roots = setPostorders(tree);
+        orientEdges(graph);
+        setNumDescendents(roots);
+        setLabelRange(roots);
+        setDataForEach(graph.edges(),"isBridgeEdge",false); // default to false
+        tree.edges().forEach(function(edge) {
+            var di = info(info(edge).child);
+            var po = di.postorder;
+            var nd = di.numDescendents;
+            var L = di.L;
+            var H = di.H;
+            if(H <= po && L > (po - nd)) {
+                edge.data("isBridgeEdge",true);
+            }
+        });
+        removeInfo(graph);
+
+        return roots; //this doesn't really make sense to return here
+    };
+
+    //filters (this could be generalized...)
+    var isBridgeEdge = function(i,edge) { return edge.data("isBridgeEdge"); };
+    var isVisited = function(i,ele) { return ele.data("isVisited"); };
+    var isReachable = function(i,ele) { return ele.data("isReachable"); };
+
+    var updateBridges = function() {
+        var graph = cy.elements();
+        setBridges(graph);
+//    graph.edges().forEach(function(edge) {
+//      console.log(eleStr(edge)+" isBridgeEdge="+edge.data("isBridgeEdge"));
+//    });
+    }
+
+    function getNumComponents(graph) {
+        initInfo(graph);
+        var tree = graph.kruskal();
+        setInfoForEach(graph.edges(),"isTreeEdge",false);
+        setInfoForEach(tree.edges(),"isTreeEdge",true);
+        var roots = setPostorders(tree);
+        return roots.length;
+    }
+
+    //Events
+
+    var resetCircuit = function() {
+        circuit = cy.collection(); //starts out empty
+        setDataForEach(cy.elements(),"isVisited", false);
+        setDataForEach(cy.elements(),"isReachable", false);
+        lastVisited = null;
+    };
+
+    var circuit;
+    var lastVisited;
+    resetCircuit();
+
+    cy.on('add remove', function(e) {
+        updateConnected(cy.elements());
+    });
+
+    cy.on('tap', function(evt){
+        if(evt.cyTarget === cy) {
+            console.log("clicked on background");
+            if(editMode) {
+                //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
+                addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
+            }
+        } //clicked on background
+
+        else {
+            console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
+            if(editMode && evt.cyTarget.isNode()) {
+                var selected = cy.$(':selected');
+                //console.log(selected[0].id() + " is selected");
+                if (selected.length > 0 && selected[0].isNode()) {
+                    addEdge(selected[0], evt.cyTarget);
+                    //unselectAll(); //not working, probably bc select event happens after tap
+                }
+            }
+            else if(!editMode && evt.cyTarget.isNode()) {
+
+                if(lastVisited != null) { //if we've already started
+                    var edgesBetween = findEdgesBetween(lastVisited, evt.cyTarget).filter('[!isVisited][?isReachable]');
+                    if(edgesBetween.length > 0) {
+                        edgesBetween[0].data("isVisited", true);
+                        evt.cyTarget.data("isVisited",true);
+                        lastVisited = evt.cyTarget;
+                    }
+                }
+                else {
+                    evt.cyTarget.data("isVisited",true);
+                    lastVisited = evt.cyTarget;
+                }
+
+                cy.elements().data("isReachable", false);
+                var available = getReachableNodesFrom(cy.elements(), lastVisited);
+                available.data("isReachable", true);
+
+            }
+        }
+    });
+
+    var findEdgesBetween = function(node1, node2) {
+        return node1.edgesWith(node2);
+    }
+
+    var getReachableNodesFrom = function(graph, node) {
+        var available = graph.filter('[!isVisited]');
+        if(node == null) {
+            return available;
+        }
+        else {
+            updateBridges();
+            var adjacent = node.closedNeighborhood().filter('[!isVisited]'); //nodes and edges adjacent to me not yet visited
+            var adjacentEdges = adjacent.filter('edge'); //edges adjacent to me not yet visited
+            var notBridges = adjacentEdges.filter('[!isBridgeEdge]'); //edges adjacent to me not yet visited that are not bridges
+            if(notBridges.length != 0) { //if we have some non-bridges
+                var nodesConnectedToNotBridges = notBridges.connectedNodes().filter('[!isVisited]').difference(node);
+                return notBridges.union(nodesConnectedToNotBridges);
+            }
+            else {
+                return adjacent;
+            }
+        }
+    };
+
+    $(document).keyup(function(e) {
+        console.log("key: " + e.keyCode);
+        if(editMode) {
+            if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
+                deleteSelected();
+            }
+            else if (e.keyCode === 32) { //spacebar
+                unselectAll();
+            }
+        }
+    });
+
+
+    $('#downloadButton').click( function() {
+        console.log("download");
+        var png = cy.png({bg:'#eeeeee'});
+        window.open().location = png;
+        this.blur();
+    });
+
+    $('#deleteButton').click( function() {
+        deleteSelected();
+        this.blur();
+    });
+
+    $('#clearAllButton').click( function() {
+        if(confirm("Are you sure?")) {
+            clearAll();
+        }
+        this.blur();
+    });
+
+    $('#toggleModeButton').click( function() {
+        var text = $('#toggleModeButton').text();
+        if(text === "Switch to Animate Mode") {
+            editMode = false;
+            $('#deleteButton').hide();
+            $('#clearAllButton').hide();
+            $('#toggleModeButton').text("Switch to Edit Mode");
+            unselectAll();
+            cy.autolock(true);
+            cy.autounselectify(true);
+            this.blur();
+        }
+        else {
+            editMode = true;
+            $('#deleteButton').show();
+            $('#clearAllButton').show();
+            $('#toggleModeButton').text("Switch to Animate Mode");
+            cy.autolock(false);
+            cy.autounselectify(false);
+            resetCircuit();
+        }
+        this.blur(); //this is not so good for accessibility so change it! leaving for now because need focus on cy canvas
+    });
+
+    //Do stuff at start
+
+    var x_spacing = $('#cy').width() / 10;
+    var y_spacing = $('#cy').height() / 3;
+    var leftOffset = $('#cy').offset().left;
+    var topOffset = $('#cy').offset().top;
+
+    for(var i=0;i<6;i++)
+    {
+        addNode(x_spacing*i*2, y_spacing+80);
+        if(i===0 || i === 5) {
+            addNode(x_spacing*i*2, y_spacing*2+50);
+        }
+        else {
+            addNode(x_spacing*i*2, $('#cy').height());
+        }
+    }
+
+    for(var i=0;i<5;i++)
+    {
+        addNode(x_spacing*i*2+x_spacing, y_spacing*2+50);
+        addNode(x_spacing*i*2+x_spacing, $('#cy').height());
+    }
+
+    //across the top and long verticals
+    addEdgeByID('n0','n2');
+    addEdgeByID('n2','n3');
+    addEdgeByID('n2','n4');
+    addEdgeByID('n4','n5');
+    addEdgeByID('n4','n6');
+    addEdgeByID('n6','n7');
+    addEdgeByID('n6','n8');
+    addEdgeByID('n8','n9');
+    addEdgeByID('n8','n10');
+
+    //diagonals
+    addEdgeByID('n2','n12');
+    addEdgeByID('n2','n14');
+    addEdgeByID('n4','n14');
+    addEdgeByID('n4','n16');
+    addEdgeByID('n6','n16');
+    addEdgeByID('n6','n18');
+    addEdgeByID('n8','n18');
+    addEdgeByID('n8','n20');
+
+    //small verticals and 2 small horizontals at edge
+    addEdgeByID('n12','n13');
+    addEdgeByID('n14','n15');
+    addEdgeByID('n16','n17');
+    addEdgeByID('n18','n19');
+    addEdgeByID('n20','n21');
+
+    addEdgeByID('n12','n1');
+    addEdgeByID('n20','n11');
+
+    updateConnected(cy.elements());
+    debugEles(cy.elements());
+
+
+}); // on dom ready
