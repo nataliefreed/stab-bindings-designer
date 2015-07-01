@@ -10,13 +10,13 @@ $(function(){ // on dom ready
             .css({
                 'content': 'data(name)',
                 'text-valign': 'center',
-                'color': 'white',
-                'text-outline-width': 2,
-                'text-outline-color': '#888',
+                'color': 'black',
+                //'text-outline-width': 2,
+                //'text-outline-color': '#888',
                 'background-color': '#888',
                 'shape': 'circle',
-                'width': 15,
-                'height': 15
+                'width': 20,
+                'height': 20
             })
             .selector('node:selected')
             .css({
@@ -91,11 +91,48 @@ $(function(){ // on dom ready
             displayText.text("fully connected");
             displayText.removeClass("text-danger");
             displayText.addClass("text-success");
+            return true;
         }
         else {
             displayText.text("not fully connected");
             displayText.addClass("text-danger");
             displayText.removeClass("text-success");
+            return false;
+        }
+    }
+
+    var updateDegree = function(graph, fullyConnected) {
+        var displayText = $('#circuitStatus');
+        var numOddVertices = 0;
+
+        graph.nodes().forEach(function( ele ){
+            var degree = ele.degree(false);
+            if(degree % 2 !== 0) {
+                numOddVertices++;
+            }
+            ele.css({ content: degree });
+        });
+
+        if(numOddVertices === 0 && fullyConnected && graph.nodes().length > 0) {
+            displayText.text("Euler circuit! Start anywhere");
+            displayText.removeClass("text-danger");
+            displayText.removeClass("text-warning");
+            displayText.addClass("text-success");
+            return true;
+        }
+        else if(numOddVertices == 2 && fullyConnected) {
+            displayText.text("Euler path (start and end in different places)");
+            displayText.removeClass("text-danger");
+            displayText.removeClass("text-success");
+            displayText.addClass("text-warning");
+            return true;
+        }
+        else {
+            displayText.text("no Euler path or circuit");
+            displayText.addClass("text-danger");
+            displayText.removeClass("text-warning");
+            displayText.removeClass("text-success");
+            return false;
         }
     }
 
@@ -381,7 +418,8 @@ $(function(){ // on dom ready
     resetCircuit();
 
     cy.on('add remove', function(e) {
-        updateConnected(cy.elements());
+        var fullyConnected = updateConnected(cy.elements());
+        updateDegree(cy.elements(), fullyConnected);
     });
 
     cy.on('tap', function(evt){
@@ -561,8 +599,9 @@ $(function(){ // on dom ready
     addEdgeByID('n12','n1');
     addEdgeByID('n20','n11');
 
-    updateConnected(cy.elements());
-    debugEles(cy.elements());
+    var fullyConnected = updateConnected(cy.elements());
+    updateDegree(cy.elements(), fullyConnected);
+    //debugEles(cy.elements());
 
 
 }); // on dom ready
