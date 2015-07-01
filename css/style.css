@@ -1,0 +1,21 @@
+.top-space {
+    margin-top:20px;
+}
+
+.button-vspace {
+    margin-top:10px;
+}
+
+.btn-lg, .btn-group-lg>.btn {
+    padding: 15px 16px 13px;
+    line-height: 15px;
+}
+
+#cy {
+    width: full;
+    height: 300px;
+    /*position: absolute;*/
+    /*left: 0;*/
+    /*top: 200;*/
+    background-color: #127ba3;
+}
