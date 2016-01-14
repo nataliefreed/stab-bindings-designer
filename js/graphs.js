@@ -2,6 +2,10 @@ $(function(){ // on dom ready
 
     var editMode = true;
 
+    $(window).bind('beforeunload', function () {
+        return 'Your design is not saved!';
+    });
+
     var cy = cytoscape({
         container: $('#cy')[0],
 
