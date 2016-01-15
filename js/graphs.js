@@ -6,6 +6,17 @@ $(function(){ // on dom ready
         return 'Your design is not saved!';
     });
 
+    $("#book-width").val($('#cy').width()/96);
+    $("#book-height").val($('#cy').height()/96);
+
+    $("#book-width").change(function() {
+        $(this).val(setBookWidthInInches($(this).val()));
+    });
+
+    $("#book-height").change(function() {
+        $(this).val(setBookHeightInInches($(this).val()));
+    });
+
     var cy = cytoscape({
         container: $('#cy')[0],
 
@@ -39,11 +50,16 @@ $(function(){ // on dom ready
             .css({
                 'line-color': '#66FF33',
                 'background-color': '#66FF33'
+            })
+            //.selector('edge[?isBridgeEdge]')
+            .selector('edge[!isBridgeEdge]')
+            .css( {
+                'width': 3
+            })
+            .selector('[?isBridgeEdge]')
+            .css({
+                'width': 1
             }),
-//  .selector('edge[?isBridgeEdge]')
-//     .css({
-//        'line-color': '#BB2A2A'
-//      }),
 
         zoomingEnabled: false,
         userZoomingEnabled: false,
@@ -62,6 +78,26 @@ $(function(){ // on dom ready
             padding: 10
         }
     });
+
+    var setBookWidthInInches = function(w) {
+        if(w < 0) {
+            w = 0;
+        } else if(w > 10) {
+            w = 10;
+        }
+        $('#cy').width(w+"in");
+        return w;
+    }
+
+    var setBookHeightInInches = function(h) {
+        if(h < 0) {
+            h = 0;
+        } else if(h > 3) {
+            h = 3;
+        }
+        $('#cy').height(h+"in");
+        return h;
+    }
 
     var addNode = function(x, y) {
         var node = cy.add({
@@ -250,7 +286,7 @@ $(function(){ // on dom ready
         };
         tree.nodes().forEach(function(root) { setNodePreorder(root, 1); });
     };
-    var setPostorders = function(tree) {
+    var setPostorders = function(tree) { //
         var roots = [];
         var setNodePostorder = function(node, next) {
             var ni = info(node);
@@ -364,7 +400,7 @@ $(function(){ // on dom ready
     var setBridges = function(graph) {
         initInfo(graph);
         var tree = graph.kruskal();
-        setInfoForEach(graph.edges(),"isTreeEdge",false);
+        setInfoForEach(cy.elements(),"isTreeEdge",false);
         setInfoForEach(tree.edges(),"isTreeEdge",true);
         var roots = setPostorders(tree);
         orientEdges(graph);
@@ -385,6 +421,21 @@ $(function(){ // on dom ready
 
         return roots; //this doesn't really make sense to return here
     };
+    //creates subgraph from a collection with identical topology storing references to original nodes/edges for future updates / merges
+    //assumes all nodes referenced by edges in the collection are included
+    var properSubgraph = function(collection) {
+        var subgraph = cytoscape({ headless: true });
+        collection.forEach(function(ele, i, eles) {
+            var added;
+            if(ele.isEdge()) {
+                added = subgraph.add( { group: ele.group(), data: { id: ele.id(), source: ele.source().id(), target: ele.target().id() }} );
+            } else {
+                added = subgraph.add( { group: ele.group(), data: { id: ele.id() }} );
+            }
+            added.data('original', ele);
+        });
+        return subgraph;
+    }
 
     //filters (this could be generalized...)
     var isBridgeEdge = function(i,edge) { return edge.data("isBridgeEdge"); };
@@ -392,8 +443,15 @@ $(function(){ // on dom ready
     var isReachable = function(i,ele) { return ele.data("isReachable"); };
 
     var updateBridges = function() {
-        var graph = cy.elements();
-        setBridges(graph);
+        //var graph = cy.elements();
+        var available = properSubgraph(cy.elements().filter('node, edge[!isVisited]'));
+        setBridges(available.elements());
+        cy.elements().forEach(function(ele, i, eles) { //start fresh and treat visited edges as non-bridges
+            ele.data('isBridgeEdge', false);
+        });
+        available.elements().forEach(function(ele, i, eles) { //copy data from cloned subgraph
+            ele.data('original').data('isBridgeEdge', ele.data('isBridgeEdge'));
+        });
 //    graph.edges().forEach(function(edge) {
 //      console.log(eleStr(edge)+" isBridgeEdge="+edge.data("isBridgeEdge"));
 //    });
@@ -436,7 +494,7 @@ $(function(){ // on dom ready
         } //clicked on background
 
         else {
-            console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
+            //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
             if(editMode && evt.cyTarget.isNode()) {
                 var selected = cy.$(':selected');
                 //console.log(selected[0].id() + " is selected");
@@ -461,8 +519,8 @@ $(function(){ // on dom ready
                 }
 
                 cy.elements().data("isReachable", false);
-                var available = getReachableNodesFrom(cy.elements(), lastVisited);
-                available.data("isReachable", true);
+                var reachable = getReachableNodesFrom(cy.elements(), lastVisited);
+                reachable.data("isReachable", true);
 
             }
         }
@@ -493,7 +551,7 @@ $(function(){ // on dom ready
     };
 
     $(document).keyup(function(e) {
-        console.log("key: " + e.keyCode);
+        //console.log("key: " + e.keyCode);
         if(editMode) {
             if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
                 deleteSelected();
@@ -550,16 +608,16 @@ $(function(){ // on dom ready
 
     //Do stuff at start
 
-    var x_spacing = $('#cy').width() / 10;
-    var y_spacing = $('#cy').height() / 3;
+    var x_spacing = $('#cy').width() / 6;
+    var y_spacing = $('#cy').height() / 2.5;
     var leftOffset = $('#cy').offset().left;
     var topOffset = $('#cy').offset().top;
 
     for(var i=0;i<6;i++)
     {
-        addNode(x_spacing*i*2, y_spacing+80);
+        addNode(x_spacing*i*2, y_spacing);
         if(i===0 || i === 5) {
-            addNode(x_spacing*i*2, y_spacing*2+50);
+            addNode(x_spacing*i*2, y_spacing*2);
         }
         else {
             addNode(x_spacing*i*2, $('#cy').height());
@@ -568,7 +626,7 @@ $(function(){ // on dom ready
 
     for(var i=0;i<5;i++)
     {
-        addNode(x_spacing*i*2+x_spacing, y_spacing*2+50);
+        addNode(x_spacing*i*2+x_spacing, y_spacing*2);
         addNode(x_spacing*i*2+x_spacing, $('#cy').height());
     }
 
