@@ -645,6 +645,7 @@ $(function(){ // on dom ready
 
     $('#resetButton').click( function() {
         resetCircuit();
+        updateBridges();
     });
 
     $('#toggleModeButton').click( function() {
