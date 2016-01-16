@@ -162,6 +162,15 @@ $(function(){ // on dom ready
 
         var numComponents = getNumComponents(graph);
         //console.log("number of components: " + numComponents);
+
+        if(numComponents <= 1) {
+            displayText.text("1 fully connected graph");
+            return true;
+        } else {
+            displayText.text(numComponents + " disconnected subgraphs");
+            return false;
+        }
+        /*
         if(numComponents <= 1) {
             displayText.text("fully connected");
             displayText.removeClass("text-danger");
@@ -173,11 +182,12 @@ $(function(){ // on dom ready
             displayText.addClass("text-danger");
             displayText.removeClass("text-success");
             return false;
-        }
+        }*/
     }
 
     var updateDegree = function(graph, fullyConnected) {
         var displayText = $('#circuitStatus');
+        var degreeText = $('#degreeInfo');
         var numOddVertices = 0;
 
         graph.nodes().forEach(function( ele ){
@@ -188,15 +198,17 @@ $(function(){ // on dom ready
             ele.css({ content: degree });
         });
 
+        degreeText.text("number of vertices of odd degree (with an odd number of stitch connections): " + numOddVertices);
+
         if(numOddVertices === 0 && fullyConnected && graph.nodes().length > 0) {
-            displayText.text("Euler circuit! Start anywhere");
+            displayText.text("Euler circuit! Start stitching from any hole");
             displayText.removeClass("text-danger");
             displayText.removeClass("text-warning");
             displayText.addClass("text-success");
             return true;
         }
         else if(numOddVertices == 2 && fullyConnected) {
-            displayText.text("Euler path (start and end in different places)");
+            displayText.text("Euler path (start and end stitches in different holes)");
             displayText.removeClass("text-danger");
             displayText.removeClass("text-success");
             displayText.addClass("text-warning");
@@ -209,6 +221,7 @@ $(function(){ // on dom ready
             displayText.removeClass("text-success");
             return false;
         }
+
     }
 
     var unselectAll = function() {
