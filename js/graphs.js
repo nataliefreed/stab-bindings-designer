@@ -41,11 +41,6 @@ $(function(){ // on dom ready
             .css({
                 'background-color': '#FFD633'
             })
-            .selector('[?isVisited]')
-            .css({
-                'line-color': '#B200B2',
-                'background-color': '#B200B2'
-            })
             .selector('[?isReachable]')
             .css({
                 'line-color': '#66FF33',
@@ -54,15 +49,23 @@ $(function(){ // on dom ready
             //.selector('edge[?isBridgeEdge]')
             .selector('edge[!isBridgeEdge]')
             .css( {
-                'width': 3
+                'width': 1
             })
             .selector('[?isBridgeEdge]')
             .css({
-                'width': 1
+                'width': 1,
+                'line-style': "dashed"
             })
             .selector('edge:selected')
             .css({
                 'line-color': '#FFD633',
+                'width': 1
+            })
+            .selector('edge[?isVisited]')
+            .css({
+                //'line-color': '#B200B2',
+                //'background-color': '#B200B2'
+                //'line-style': "dashed",
                 'width': 5
             }),
 
@@ -646,7 +649,7 @@ $(function(){ // on dom ready
 
     $('#toggleModeButton').click( function() {
         var text = $('#toggleModeButton').text();
-        if(text === "Switch to Animate Mode") {
+        if(text === "Switch to Animate Mode") { //go to animate mode
             editMode = false;
             $('#deleteButton').hide();
             $('#clearAllButton').hide();
@@ -659,9 +662,10 @@ $(function(){ // on dom ready
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
+            updateBridges();
             this.blur();
         }
-        else {
+        else { //go to edit mode
             editMode = true;
             $('#deleteButton').show();
             $('#clearAllButton').show();
@@ -752,6 +756,8 @@ $(function(){ // on dom ready
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
     //debugEles(cy.elements());
+
+    //updateBridges();
 
 
 }); // on dom ready
