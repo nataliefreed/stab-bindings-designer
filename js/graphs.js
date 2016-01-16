@@ -2,6 +2,10 @@ $(function(){ // on dom ready
 
     var editMode = true;
 
+    var undoStack = new Array();
+
+    $('#resetButton').hide();
+
     $(window).bind('beforeunload', function () {
         return 'Your design is not saved!';
     });
@@ -37,10 +41,6 @@ $(function(){ // on dom ready
             .css({
                 'background-color': '#FFD633'
             })
-            .selector('edge:selected')
-            .css({
-                'line-color': '#FFD633'
-            })
             .selector('[?isVisited]')
             .css({
                 'line-color': '#B200B2',
@@ -59,6 +59,11 @@ $(function(){ // on dom ready
             .selector('[?isBridgeEdge]')
             .css({
                 'width': 1
+            })
+            .selector('edge:selected')
+            .css({
+                'line-color': '#FFD633',
+                'width': 5
             }),
 
         zoomingEnabled: false,
@@ -111,22 +116,52 @@ $(function(){ // on dom ready
 
     var addEdge = function(source, target) {
         var edge = cy.add({group: "edges", data: {source: source.id(), target: target.id()}});
-        console.log("added edge " + edge.id());
+        //console.log("added edge " + edge.id());
         return edge;
     }
 
     var addEdgeByID = function(source, target) {
         var edge = cy.add({group: "edges", data: {source: source, target: target}});
-        console.log("added edge " + edge.id());
+        //console.log("added edge " + edge.id());
         return edge;
     }
+
+
+    $('#backStitchButton').click( function() {
+        var text = $('#backStitchButton').text();
+        var edges = cy.edges();
+        if(text === "Add back stitches") {
+            edges.forEach(function (ele, i, eles) {
+                var parallelEdges = cy.collection([ele]).parallelEdges();
+                if (parallelEdges.length < 2) {
+                    addEdge(ele.source(), ele.target()); //add another edge between those two nodes
+                }
+            });
+            $('#backStitchButton').text("Remove back stitches");
+        }
+        else {
+            edges.forEach(function (ele, i, eles) {
+                var parallelEdges = cy.collection([ ele ]).parallelEdges();
+                for(var i=0;i<parallelEdges.length-1;i++) {
+                    parallelEdges[i].remove();
+                }
+                console.log();
+                //if(ele.parallelEdges().length)
+                //addEdge(ele.source(), ele.target()); //add another edge between those two nodes
+            });
+
+            $('#backStitchButton').text("Add back stitches");
+        }
+    });
+
+
 
     //check if graph is fully connected
     var updateConnected = function(graph) {
         var displayText = $('#connectedStatus');
 
         var numComponents = getNumComponents(graph);
-        console.log("number of components: " + numComponents);
+        //console.log("number of components: " + numComponents);
         if(numComponents <= 1) {
             displayText.text("fully connected");
             displayText.removeClass("text-danger");
@@ -188,13 +223,13 @@ $(function(){ // on dom ready
     var deleteSelected = function() {
         var selected = cy.$(':selected');
         if(selected.length > 0) {
-            cy.remove(selected[0]);
+            undoStack.push(cy.remove(selected[0].union(selected[0].connectedEdges())));
         }
     };
 
     var clearAll = function() {
         var collection = cy.elements();
-        cy.remove(collection);
+        undoStack.push(cy.remove(collection));
     };
 
     var downloadDataUri = function(options) {
@@ -472,6 +507,7 @@ $(function(){ // on dom ready
         circuit = cy.collection(); //starts out empty
         setDataForEach(cy.elements(),"isVisited", false);
         setDataForEach(cy.elements(),"isReachable", false);
+        setDataForEach(cy.elements(),"isBridgeEdge", false);
         lastVisited = null;
     };
 
@@ -570,6 +606,10 @@ $(function(){ // on dom ready
         this.blur();
     });
 
+    //$('#saveButton').click( function() {
+    //    cy.elements().jsons();
+    //});
+
     $('#deleteButton').click( function() {
         deleteSelected();
         this.blur();
@@ -582,12 +622,26 @@ $(function(){ // on dom ready
         this.blur();
     });
 
+    $('#undoButton').click( function() {
+        undoStack.pop().restore();
+        this.blur();
+    });
+
+    $('#resetButton').click( function() {
+        resetCircuit();
+    });
+
     $('#toggleModeButton').click( function() {
         var text = $('#toggleModeButton').text();
         if(text === "Switch to Animate Mode") {
             editMode = false;
             $('#deleteButton').hide();
             $('#clearAllButton').hide();
+            $('#resetButton').show();
+            $('#backStitchButton').hide();
+            $('#undoButton').hide();
+            //$('#saveButton').hide();
+            $('#drawing-instructions').hide();
             $('#toggleModeButton').text("Switch to Edit Mode");
             unselectAll();
             cy.autolock(true);
@@ -598,6 +652,11 @@ $(function(){ // on dom ready
             editMode = true;
             $('#deleteButton').show();
             $('#clearAllButton').show();
+            $('#resetButton').hide();
+            $('#backStitchButton').show();
+            $('#undoButton').show();
+            //$('#saveButton').show();
+            $('#drawing-instructions').show();
             $('#toggleModeButton').text("Switch to Animate Mode");
             cy.autolock(false);
             cy.autounselectify(false);
@@ -613,10 +672,11 @@ $(function(){ // on dom ready
     var leftOffset = $('#cy').offset().left;
     var topOffset = $('#cy').offset().top;
 
-    for(var i=0;i<6;i++)
+    var numInnerHoles = 4;
+    for(var i=0;i<numInnerHoles;i++)
     {
         addNode(x_spacing*i*2, y_spacing);
-        if(i===0 || i === 5) {
+        if(i===0 || i === numInnerHoles-1) {
             addNode(x_spacing*i*2, y_spacing*2);
         }
         else {
@@ -624,7 +684,7 @@ $(function(){ // on dom ready
         }
     }
 
-    for(var i=0;i<5;i++)
+    for(var i=0;i<numInnerHoles-1;i++)
     {
         addNode(x_spacing*i*2+x_spacing, y_spacing*2);
         addNode(x_spacing*i*2+x_spacing, $('#cy').height());
@@ -636,30 +696,45 @@ $(function(){ // on dom ready
     addEdgeByID('n2','n4');
     addEdgeByID('n4','n5');
     addEdgeByID('n4','n6');
-    addEdgeByID('n6','n7');
-    addEdgeByID('n6','n8');
+    //addEdgeByID('n6','n7');
+    //addEdgeByID('n6','n8');
+    //addEdgeByID('n8','n9');
+    //addEdgeByID('n8','n10');
+
+    //diagonals (small book)
+    addEdgeByID('n2','n10');
+    addEdgeByID('n10','n4');
+    addEdgeByID('n2','n8');
+    addEdgeByID('n4','n12');
+
+    //small verticals (small book)
     addEdgeByID('n8','n9');
-    addEdgeByID('n8','n10');
+    addEdgeByID('n12','n13');
+    addEdgeByID('n10','n11');
+
+    //small horizontals (small book)
+    addEdgeByID('n1','n8');
+    addEdgeByID('n12','n7');
 
     //diagonals
-    addEdgeByID('n2','n12');
-    addEdgeByID('n2','n14');
-    addEdgeByID('n4','n14');
-    addEdgeByID('n4','n16');
-    addEdgeByID('n6','n16');
-    addEdgeByID('n6','n18');
-    addEdgeByID('n8','n18');
-    addEdgeByID('n8','n20');
-
-    //small verticals and 2 small horizontals at edge
-    addEdgeByID('n12','n13');
-    addEdgeByID('n14','n15');
-    addEdgeByID('n16','n17');
-    addEdgeByID('n18','n19');
-    addEdgeByID('n20','n21');
-
-    addEdgeByID('n12','n1');
-    addEdgeByID('n20','n11');
+    //addEdgeByID('n2','n12');
+    //addEdgeByID('n2','n14');
+    //addEdgeByID('n4','n14');
+    //addEdgeByID('n4','n16');
+    //addEdgeByID('n6','n16');
+    //addEdgeByID('n6','n18');
+    //addEdgeByID('n8','n18');
+    //addEdgeByID('n8','n20');
+    //
+    ////small verticals and 2 small horizontals at edge
+    //addEdgeByID('n12','n13');
+    //addEdgeByID('n14','n15');
+    //addEdgeByID('n16','n17');
+    //addEdgeByID('n18','n19');
+    //addEdgeByID('n20','n21');
+    //
+    //addEdgeByID('n12','n1');
+    //addEdgeByID('n20','n11');
 
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
