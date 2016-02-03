@@ -1,3 +1,7 @@
+body {
+    background-color: #438CA1;
+}
+
 .top-space {
     margin-top:20px;
 }
@@ -17,10 +21,17 @@
 }
 
 #cy {
-    width: 5.5in;
-    height: 2in;
+    width: 900px;
+    height: 225px;
     /*position: absolute;*/
     /*left: 0;*/
     /*top: 200;*/
-    background-color: #127ba3;
+    /*background-color: #127ba3;*/
+    background-color: #ffffff;
+}
+
+#grid-canvas {
+    position: absolute;
+    /*background-color: #FFFF00;*/
+    z-index: 0;
 }

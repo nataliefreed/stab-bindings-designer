@@ -1,8 +1,13 @@
 $(function(){ // on dom ready
 
+    $('.file-inputs').bootstrapFileInput();
+    $('input[type=file]').bootstrapFileInput();
+
     var editMode = true;
 
     var undoStack = new Array();
+
+    var snapToGrid = true;
 
     $('#resetButton').hide();
 
@@ -29,37 +34,37 @@ $(function(){ // on dom ready
             .css({
                 'content': 'data(name)',
                 'text-valign': 'center',
-                'color': 'black',
-                //'text-outline-width': 2,
-                //'text-outline-color': '#888',
+                'color': 'white',
                 'background-color': '#888',
                 'shape': 'circle',
                 'width': 20,
                 'height': 20
             })
-            .selector('node:selected')
+            .selector('edge')
             .css({
-                'background-color': '#FFD633'
+                'curve-style': 'bezier',
+                'control-point-step-size':  12
             })
-            .selector('[?isReachable]')
+            .selector('node:selected') //selected node in edit mode
             .css({
-                'line-color': '#66FF33',
-                'background-color': '#66FF33'
+                'background-color': '#FFB300',
+                'color': 'black',
             })
-            //.selector('edge[?isBridgeEdge]')
-            .selector('edge[!isBridgeEdge]')
+            .selector('edge[!isBridgeEdge]') //non-bridge edges in animate mode
             .css( {
-                'width': 1
+                'width': 1,
+                'line-color': '#000000',
             })
             .selector('[?isBridgeEdge]')
             .css({
                 'width': 1,
+                'line-color': '#000000',
                 'line-style': "dashed"
             })
             .selector('edge:selected')
             .css({
-                'line-color': '#FFD633',
-                'width': 1
+                'line-color': '#FFB300',
+                'width': 4
             })
             .selector('edge[?isVisited]')
             .css({
@@ -67,6 +72,19 @@ $(function(){ // on dom ready
                 //'background-color': '#B200B2'
                 //'line-style': "dashed",
                 'width': 5
+            })
+            .selector('[?isReachable]')
+            .css({
+                'line-color': '#FF8100'
+                //'background-color': '#66FF33'
+            })
+            .selector('node[?isCurrentVisited]')
+            .css({
+                'background-color': '#FF8100'
+            })
+            .selector('edge[?inEditMode]') //edges in edit mode
+            .css( {
+                'width': 4
             }),
 
         zoomingEnabled: false,
@@ -113,7 +131,7 @@ $(function(){ // on dom ready
             data: {},
             renderedPosition: {x: x, y: y}
         });
-        console.log("added node " + node.id() + " at " + x + "," + y);
+        //console.log("added node " + node.id() + " at " + x + "," + y);
         return node;
     }
 
@@ -130,32 +148,25 @@ $(function(){ // on dom ready
     }
 
 
-    $('#backStitchButton').click( function() {
-        var text = $('#backStitchButton').text();
+    var addBackStitches = function() {
         var edges = cy.edges();
-        if(text === "Add back stitches") {
-            edges.forEach(function (ele, i, eles) {
-                var parallelEdges = cy.collection([ele]).parallelEdges();
-                if (parallelEdges.length < 2) {
-                    addEdge(ele.source(), ele.target()); //add another edge between those two nodes
-                }
-            });
-            $('#backStitchButton').text("Remove back stitches");
-        }
-        else {
-            edges.forEach(function (ele, i, eles) {
-                var parallelEdges = cy.collection([ ele ]).parallelEdges();
-                for(var i=0;i<parallelEdges.length-1;i++) {
-                    parallelEdges[i].remove();
-                }
-                console.log();
-                //if(ele.parallelEdges().length)
-                //addEdge(ele.source(), ele.target()); //add another edge between those two nodes
-            });
+        edges.forEach(function (ele, i, eles) {
+            var parallelEdges = cy.collection([ele]).parallelEdges();
+            if (parallelEdges.length < 2) {
+                addEdge(ele.source(), ele.target()); //add another edge between those two nodes
+            }
+        });
+    };
 
-            $('#backStitchButton').text("Add back stitches");
-        }
-    });
+    var removeBackStitches = function() {
+        var edges = cy.edges();
+        edges.forEach(function (ele, i, eles) {
+            var parallelEdges = cy.collection([ ele ]).parallelEdges();
+            for(var i=0;i<parallelEdges.length-1;i++) {
+                parallelEdges[i].remove();
+            }
+        });
+    };
 
 
 
@@ -524,6 +535,7 @@ $(function(){ // on dom ready
         setDataForEach(cy.elements(),"isVisited", false);
         setDataForEach(cy.elements(),"isReachable", false);
         setDataForEach(cy.elements(),"isBridgeEdge", false);
+        setDataForEach(cy.elements(),"isCurrentVisited", false);
         lastVisited = null;
     };
 
@@ -531,9 +543,11 @@ $(function(){ // on dom ready
     var lastVisited;
     resetCircuit();
 
-    cy.on('add remove', function(e) {
+    cy.on('add remove', function(evt) {
         var fullyConnected = updateConnected(cy.elements());
-        updateDegree(cy.elements(), fullyConnected);
+        if(editMode) {
+            updateDegree(cy.elements(), fullyConnected);
+        }
     });
 
     cy.on('tap', function(evt){
@@ -541,33 +555,46 @@ $(function(){ // on dom ready
             console.log("clicked on background");
             if(editMode) {
                 //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
-                addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
+                //if(snapToGrid) {
+                //    addNode(evt.cyRenderedPosition.x+10, evt.cyRenderedPosition.y+10);
+                //} else {
+                    addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
+                //}
             }
         } //clicked on background
 
+        //edit mode, adding nodes
         else {
             //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
             if(editMode && evt.cyTarget.isNode()) {
                 var selected = cy.$(':selected');
                 //console.log(selected[0].id() + " is selected");
-                if (selected.length > 0 && selected[0].isNode()) {
-                    addEdge(selected[0], evt.cyTarget);
-                    //unselectAll(); //not working, probably bc select event happens after tap
+
+                //don't allow loops or more than one connection
+                if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.cyTarget) {
+                    if(selected[0].edgesWith(evt.cyTarget).length < 1) {
+                        addEdge(selected[0], evt.cyTarget).data("isVisited", true);
+                        //unselectAll(); //not working, probably bc select event happens after tap
+                    }
                 }
             }
+            //animate mode
             else if(!editMode && evt.cyTarget.isNode()) {
 
                 if(lastVisited != null) { //if we've already started
                     var edgesBetween = findEdgesBetween(lastVisited, evt.cyTarget).filter('[!isVisited][?isReachable]');
                     if(edgesBetween.length > 0) {
+                        lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
                         edgesBetween[0].data("isVisited", true);
                         evt.cyTarget.data("isVisited",true);
                         lastVisited = evt.cyTarget;
+                        lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
                     }
                 }
-                else {
-                    evt.cyTarget.data("isVisited",true);
+                else { //first one clicked
+                    evt.cyTarget.data("isVisited", true);
                     lastVisited = evt.cyTarget;
+                    lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
                 }
 
                 cy.elements().data("isReachable", false);
@@ -622,9 +649,27 @@ $(function(){ // on dom ready
         this.blur();
     });
 
-    //$('#saveButton').click( function() {
-    //    cy.elements().jsons();
-    //});
+    $('#saveButton').click( function() {
+        var save = document.createElement('a');
+        save.download = "graph.json";
+        console.log(cy.elements().jsons());
+        save.href = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(cy.elements().jsons()));
+        save.click();
+    });
+
+    $('#loadButton').click( function(evt) {
+        var files = evt.target.files; // FileList object
+
+        //// files is a FileList of File objects. List some properties.
+        //var output = [];
+        //for (var i = 0, f; f = files[i]; i++) {
+        //    output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+        //        f.size, ' bytes, last modified: ',
+        //        f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+        //        '</li>');
+        //}
+        //console.log(output);
+    });
 
     $('#deleteButton').click( function() {
         deleteSelected();
@@ -663,7 +708,10 @@ $(function(){ // on dom ready
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
+            resetCircuit();
+            addBackStitches();
             updateBridges();
+            hideDegree();
             this.blur();
         }
         else { //go to edit mode
@@ -679,6 +727,8 @@ $(function(){ // on dom ready
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();
+            removeBackStitches();
+            setDataForEach(cy.elements(),"isVisited", true);
         }
         this.blur(); //this is not so good for accessibility so change it! leaving for now because need focus on cy canvas
     });
@@ -760,5 +810,29 @@ $(function(){ // on dom ready
 
     //updateBridges();
 
+    //var c = $("canvas[data-id='layer2-node']");
+    var c = $('#grid-canvas');
+    var ctx = c[0].getContext("2d");
+
+    var numCols = 24;
+    var w = $('#cy').width();
+    var h = $('#cy').height();
+    var spacing = w / numCols;
+    console.log(spacing);
+    console.log(w);
+    ctx.strokeStyle="#98D0E1";
+    ctx.beginPath();
+    ctx.imageSmoothingEnabled = true;
+    for(var row=0;row<w/spacing+1;row++) {
+        ctx.moveTo(0, spacing*row);
+        ctx.lineTo(w, spacing*row);
+    }
+    for(var col=0;col<numCols+1;col++) {
+        ctx.moveTo(spacing*col, 0);
+        ctx.lineTo(spacing*col, h);
+    }
+    ctx.stroke();
+
+    setDataForEach(cy.elements(),"isVisited", true);
 
 }); // on dom ready
