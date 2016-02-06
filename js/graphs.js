@@ -578,6 +578,25 @@ $(function(){ // on dom ready
         }
         ctx.stroke();
 
+        //border
+        ctx.strokeStyle = "#438CA1";
+        ctx.strokeRect(0,0,w-1,h-1);
+
+        ////borders
+        //ctx.beginPath();
+        //ctx.strokeStyle="#438CA1";
+        //ctx.moveTo(0, 0);
+        //ctx.lineTo(w, 0);
+        //ctx.moveTo(0, 0);
+        //ctx.lineTo(0, h);
+        //
+        //ctx.moveTo(w, 0);
+        //ctx.lineTo(w, h);
+        //ctx.moveTo(0, h);
+        //ctx.lineTo(w, h);
+        //
+        //ctx.stroke();
+
         setDataForEach(cy.elements(),"isVisited", true);
     }
 
