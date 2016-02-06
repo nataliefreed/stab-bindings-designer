@@ -102,12 +102,12 @@ $(function(){ // on dom ready
             })
             .selector('[?isReachable]')
             .css({
-                'line-color': '#FF8100'
+                'line-color': '#f43fc1'
                 //'background-color': '#66FF33'
             })
             .selector('node[?isCurrentVisited]')
             .css({
-                'background-color': '#FF8100'
+                'background-color': '#f43fc1'
             })
             .selector('edge[?inEditMode]') //edges in edit mode
             .css( {
