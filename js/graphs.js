@@ -1,15 +1,5 @@
 $(function(){ // on dom ready
 
-    $('html').bind('keypress', function(e) {
-        if (e.which == 32){ //spacebar
-            e.preventDefault();
-            console.log("space");
-        }
-        if (e.which == 8 || e.which == 46) { //backspace
-            e.preventDefault();
-        }
-    });
-
     $('.file-inputs').bootstrapFileInput();
     $('input[type=file]').bootstrapFileInput();
 
@@ -95,6 +85,14 @@ $(function(){ // on dom ready
             .selector('edge[?inEditMode]') //edges in edit mode
             .css( {
                 'width': 4
+            })
+            .selector('node[?hovered]') //mouseover
+            .css( {
+                'background-color': '#FFDB86'
+            })
+            .selector('edge[?hovered]') //mouseover
+            .css( {
+                'line-color': '#FFDB86'
             }),
 
         zoomingEnabled: false,
@@ -578,11 +576,31 @@ $(function(){ // on dom ready
         setDataForEach(cy.elements(),"isVisited", true);
     }
 
+    cy.on('mouseover', function(evt) {
+        if (editMode && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
+            evt.cyTarget.data("hovered", true);
+        }
+    });
+
+    cy.on('mouseout', function(evt) {
+        if (editMode && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
+            evt.cyTarget.data("hovered", false);
+        }
+    });
 
     cy.on('add remove', function(evt) {
         var fullyConnected = updateConnected(cy.elements());
         if(editMode) {
             updateDegree(cy.elements(), fullyConnected);
+
+            if (snapToGrid) {
+                if(snapToGrid && evt.cyTarget.isNode()) {
+                    var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
+                    var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
+                    evt.cyTarget.renderedPosition('x', closestX);
+                    evt.cyTarget.renderedPosition('y', closestY);
+                }
+            }
         }
     });
 
@@ -592,35 +610,30 @@ $(function(){ // on dom ready
         return Math.round(val/snapSpacing) * snapSpacing;
     };
 
-    cy.on('free', function(evt) {
+    cy.on('free', function(evt) { //letting go of a dragged node
         if(snapToGrid && evt.cyTarget.isNode()) {
             var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
             var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
             evt.cyTarget.renderedPosition('x', closestX);
             evt.cyTarget.renderedPosition('y', closestY);
         }
-
     });
 
-    cy.on('tap', function(evt) {
-        if (evt.cyTarget === cy) { //clicked on background, add a node
+    cy.on('tapstart', function(evt) {
+        if (evt.cyTarget === cy && editMode) { //clicked on background, add a node
             console.log("clicked on background");
-            if (editMode) {
-                //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
-                if (snapToGrid) {
-                    var closestX = calcSnapLoc(evt.cyRenderedPosition.x, 24);
-                    var closestY = calcSnapLoc(evt.cyRenderedPosition.y, 24);
-                    ;
-                    addNode(closestX, closestY);
-                } else {
+                var selected = cy.$(':selected');
+                console.log(selected);
+                if (selected.length > 0) {
+                    unselectAll();
+                    console.log("unselecting");
+                }
+                else {
+                    //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
                     addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
                 }
             }
-        } //clicked on background
-    });
-
-        cy.on('tapstart', function(evt) {
-            if (evt.cyTarget !== cy) {
+            else { //if not on background
                 //edit mode, adding nodes
                 //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
                 if (editMode && evt.cyTarget.isNode()) {
@@ -690,9 +703,11 @@ $(function(){ // on dom ready
         //console.log("key: " + e.keyCode);
         if(editMode) {
             if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
+                e.preventDefault();
                 deleteSelected();
             }
             else if (e.keyCode === 32) { //spacebar
+                e.preventDefault();
                 unselectAll();
             }
         }
