@@ -86,6 +86,10 @@ $(function(){ // on dom ready
             .css( {
                 'width': 4
             })
+            //.selector('node[!inEditMode]') //edges in edit mode
+            //.css( {
+            //    'color': '#888'
+            //})
             .selector('node[?hovered]') //mouseover
             .css( {
                 'background-color': '#FFDB86'
@@ -217,30 +221,32 @@ $(function(){ // on dom ready
             if(degree % 2 !== 0) {
                 numOddVertices++;
             }
-            ele.css({ content: degree });
+            if(editMode) {
+                ele.css({content: degree});
+            }
         });
 
         degreeText.text("number of vertices of odd degree (with an odd number of stitch connections): " + numOddVertices);
 
         if(numOddVertices === 0 && fullyConnected && graph.nodes().length > 0) {
             displayText.text("Euler circuit! Start stitching from any hole");
-            displayText.removeClass("text-danger");
-            displayText.removeClass("text-warning");
-            displayText.addClass("text-success");
+            //displayText.removeClass("text-danger");
+            //displayText.removeClass("text-warning");
+            //displayText.addClass("text-success");
             return true;
         }
         else if(numOddVertices == 2 && fullyConnected) {
             displayText.text("Euler path (start and end stitches in different holes)");
-            displayText.removeClass("text-danger");
-            displayText.removeClass("text-success");
-            displayText.addClass("text-warning");
+            //displayText.removeClass("text-danger");
+            //displayText.removeClass("text-success");
+            //displayText.addClass("text-warning");
             return true;
         }
         else {
             displayText.text("no Euler path or circuit");
-            displayText.addClass("text-danger");
-            displayText.removeClass("text-warning");
-            displayText.removeClass("text-success");
+            //displayText.addClass("text-danger");
+            //displayText.removeClass("text-warning");
+            //displayText.removeClass("text-success");
             return false;
         }
 
@@ -248,10 +254,10 @@ $(function(){ // on dom ready
 
     var unselectAll = function() {
         var selected = cy.$(':selected');
-        console.log(selected.length);
+        //console.log(selected.length);
         for(var i=0;i<selected.length;i++) {
             selected[i].unselect();
-            console.log(selected[i].id() + " deselected");
+            //console.log(selected[i].id() + " deselected");
         }
     };
 
@@ -436,7 +442,7 @@ $(function(){ // on dom ready
         var setNodeNumDescendents = function(node, children) {
             var nodeInfo = info(node);
             if("numDescendents" in nodeInfo) {
-                console.log("Visitor applied multiple times!!!");
+                //console.log("Visitor applied multiple times!!!");
                 return 1;
             }
             var totalNd = 1;
@@ -558,8 +564,7 @@ $(function(){ // on dom ready
         var w = $('#cy').width();
         var h = $('#cy').height();
         var spacing = w / numCols;
-        console.log(spacing);
-        console.log(w);
+
         ctx.strokeStyle="#98D0E1";
         ctx.beginPath();
         ctx.imageSmoothingEnabled = true;
@@ -577,22 +582,21 @@ $(function(){ // on dom ready
     }
 
     cy.on('mouseover', function(evt) {
-        if (editMode && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
+        if (editMode && evt.cyTarget !== cy && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
             evt.cyTarget.data("hovered", true);
         }
     });
 
     cy.on('mouseout', function(evt) {
-        if (editMode && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
+        if (editMode && evt.cyTarget !== cy && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
             evt.cyTarget.data("hovered", false);
         }
     });
 
     cy.on('add remove', function(evt) {
         var fullyConnected = updateConnected(cy.elements());
+        updateDegree(cy.elements(), fullyConnected);
         if(editMode) {
-            updateDegree(cy.elements(), fullyConnected);
-
             if (snapToGrid) {
                 if(snapToGrid && evt.cyTarget.isNode()) {
                     var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
@@ -612,6 +616,7 @@ $(function(){ // on dom ready
 
     cy.on('free', function(evt) { //letting go of a dragged node
         if(snapToGrid && evt.cyTarget.isNode()) {
+            evt.cyTarget.data("hovered", false);
             var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
             var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
             evt.cyTarget.renderedPosition('x', closestX);
@@ -621,7 +626,7 @@ $(function(){ // on dom ready
 
     cy.on('tapstart', function(evt) {
         if (evt.cyTarget === cy && editMode) { //clicked on background, add a node
-            console.log("clicked on background");
+            //console.log("clicked on background");
                 var selected = cy.$(':selected');
                 console.log(selected);
                 if (selected.length > 0) {
@@ -724,7 +729,7 @@ $(function(){ // on dom ready
     $('#saveButton').click( function() {
         var save = document.createElement('a');
         save.download = "graph.json";
-        console.log(cy.elements().jsons());
+        //console.log(cy.elements().jsons());
         save.href = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(cy.elements().jsons()));
         save.click();
     });

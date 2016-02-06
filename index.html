@@ -2,10 +2,10 @@
 <html>
 <head>
 
+  <script src="https://code.jquery.com/jquery-git.js"></script>
+
   <link href="css/bootstrap.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
-
-  <script src="https://code.jquery.com/jquery-git.js"></script>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/2.4.2/cytoscape.js"></script>
 
@@ -20,16 +20,30 @@
 
 <body>
 
-<div class="container">
-  <div class="row clearfix">
-    <div class="col-md-12 column">
-      <h1>
-        Stab Bindings Designer
-      </h1>
-    </div>
-  </div>
 
-  <div class="row clearfix top-space">
+<div class="container">  
+
+  <!-- Nav tabs -->
+  <ul class="nav nav-tabs top-space" role="tablist" data-tabs="tabs">
+    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stab Bindings Designer</a></li>
+    <li role="presentation"><a href="#tutorial" aria-controls="tutorial" role="tab" data-toggle="tab">Tutorial</a></li>
+    <li role="presentation"><a href="#about" aria-controls="about" role="tab" data-toggle="tab">About</a></li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="home">
+
+
+  <!--<div class="row clearfix">-->
+    <!--<div class="col-md-12 column">-->
+      <!--<h1>-->
+        <!--Stab Bindings Designer-->
+      <!--</h1>-->
+    <!--</div>-->
+  <!--</div>-->
+
+  <div class="row row-fluid clearfix top-space" id="cyarea">
     <div class="col-md-10 column">
       <div id="cy">
         <canvas id="grid-canvas" width="900" height="225"></canvas>
@@ -64,21 +78,21 @@
         <button class="btn btn-success btn-l" id="saveButton">Save</button>
       <!--</div>-->
 
-      <input type="file" id="loadButton"title="Load">
+      <!--<input type="file" id="loadButton"title="Load">-->
 
-      <div class="checkbox">
-        <label class="checkbox-inline"><input type="checkbox" value="" id="snapToGrid" checked>Snap to Grid</label>
-      </div>
-
-    </div>
+      <!--<span class="checkbox">-->
+        <label class="checkbox-inline" id="snapToGrid"><input type="checkbox" value="" checked>Snap to Grid</label>
+      <!--</span>-->
 
     </div>
 
-  <div class="row clearfix">
+    </div>
+
+  <div class="row clearfix top-space">
     <div class="col-md-5 column">
       <h3 id="connectedStatus">not fully connected</h3>
       <h3 id="degreeInfo">Number of vertices of odd degree:</h3>
-      <h3 id="circuitStatus" class="text-danger">no Euler path or circuit</h3>
+      <h3 id="circuitStatus">no Euler path or circuit</h3>
     </div>
     <div class="col-md-7 column top-space" id="drawing-instructions">
       <p>Click to add a hole</p>
@@ -95,7 +109,11 @@
       <!--<input type="text" class="form-control" id="book-height">Book height in inches</input>-->
     <!--</div>-->
 <!--</div>-->
+    </div>
 
+    <div role="tabpanel" class="tab-pane" id="tutorial">testing</div>
+    <div role="tabpanel" class="tab-pane" id="about">123</div>
+  </div>
 
 
 </div>

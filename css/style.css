@@ -1,5 +1,6 @@
 body {
-    background-color: #438CA1;
+    /*background-color: #438CA1;*/
+    background-color: #C8EAF4;
 }
 
 .top-space {
@@ -20,6 +21,11 @@ body {
     /*line-height: 15px;*/
 }
 
+/*#cyarea {*/
+    /*background-color: #438CA1;*/
+    /*padding: 15px;*/
+/*}*/
+
 #cy {
     width: 900px;
     height: 225px;
@@ -28,6 +34,10 @@ body {
     /*top: 200;*/
     /*background-color: #127ba3;*/
     background-color: #ffffff;
+    border-style: solid;
+    border-width: 30px;
+    border-color: #438CA1;
+    box-sizing: content-box;
 }
 
 #grid-canvas {
@@ -36,9 +46,14 @@ body {
     z-index: 0;
 }
 
-#toolbar {
-    background-color: #FFFFFF;
-    border-style: solid;
-    border-width: 5px;
-    border-color: #000000;
+.toolbar {
+    background-color: #C8EAF4;
+    /*border-style: solid;*/
+    /*border-width: 5px;*/
+    /*border-color: #000000;*/
+}
+
+#snapToGrid {
+    /*color: #ffffff;*/
+    margin-left:10px;
 }
