@@ -26,6 +26,17 @@ $(function(){ // on dom ready
         $(this).val(setBookHeightInInches($(this).val()));
     });
 
+    var edgeLength = function(edge) {
+        var src = edge.source().position();
+        var dst = edge.target().position();
+        return Math.hypot(src.x - dst.x, src.y - dst.y);
+    };
+    var clamp = function(x, lo, hi) {
+        if(x < lo) return lo;
+        if(hi < x) return hi;
+        return x;
+    }
+
     var cy = cytoscape({
         container: $('#cy')[0],
 
@@ -42,8 +53,24 @@ $(function(){ // on dom ready
             })
             .selector('edge')
             .css({
-                'curve-style': 'bezier',
-                'control-point-step-size':  12
+                'curve-style': 'unbundled-bezier',
+                'control-point-weights': [0.5],
+                'control-point-distances': function(ele) {
+                    var overlapping = ele.codirectedEdges();
+                    // Check if we have multiple edges between this pair of nodes
+                    if(overlapping.length >= 2) {
+                        // If so we will need to have an offset midpoint to be distinct
+                        // Set midpoint distance based on edge length, clamped to a reasonable range
+                        var distance = clamp(edgeLength(ele)/8.,5.,12.);
+                        // Find the other edge so we can make sure we move in a different direction
+                        var other = (overlapping[0] === ele) ? overlapping[1] : overlapping[0];
+                        var sign = (other.id() < ele.id()) ? 1 : -1;
+                        return [distance*sign];
+                    }
+                    else {
+                        return [0.];
+                    }
+                }
             })
             .selector('node:selected') //selected node in edit mode
             .css({
@@ -140,7 +167,8 @@ $(function(){ // on dom ready
     var addNode = function(x, y) {
         var node = cy.add({
             group: "nodes",
-            data: {},
+            // Set id as n## as in Cytoscape 2.4.2
+            data: { id: "n"+cy.nodes().length },
             renderedPosition: {x: x, y: y}
         });
         //console.log("added node " + node.id() + " at " + x + "," + y);
