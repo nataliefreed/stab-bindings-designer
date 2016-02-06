@@ -1,5 +1,15 @@
 $(function(){ // on dom ready
 
+    $('html').bind('keypress', function(e) {
+        if (e.which == 32){ //spacebar
+            e.preventDefault();
+            console.log("space");
+        }
+        if (e.which == 8 || e.which == 46) { //backspace
+            e.preventDefault();
+        }
+    });
+
     $('.file-inputs').bootstrapFileInput();
     $('input[type=file]').bootstrapFileInput();
 
@@ -543,6 +553,32 @@ $(function(){ // on dom ready
     var lastVisited;
     resetCircuit();
 
+    var drawGrid = function(numCols) {
+        var c = $('#grid-canvas');
+        var ctx = c[0].getContext("2d");
+
+        var w = $('#cy').width();
+        var h = $('#cy').height();
+        var spacing = w / numCols;
+        console.log(spacing);
+        console.log(w);
+        ctx.strokeStyle="#98D0E1";
+        ctx.beginPath();
+        ctx.imageSmoothingEnabled = true;
+        for(var row=0;row<w/spacing+1;row++) {
+            ctx.moveTo(0, spacing*row);
+            ctx.lineTo(w, spacing*row);
+        }
+        for(var col=0;col<numCols+1;col++) {
+            ctx.moveTo(spacing*col, 0);
+            ctx.lineTo(spacing*col, h);
+        }
+        ctx.stroke();
+
+        setDataForEach(cy.elements(),"isVisited", true);
+    }
+
+
     cy.on('add remove', function(evt) {
         var fullyConnected = updateConnected(cy.elements());
         if(editMode) {
@@ -550,60 +586,81 @@ $(function(){ // on dom ready
         }
     });
 
-    cy.on('tap', function(evt){
-        if(evt.cyTarget === cy) {
+    var calcSnapLoc = function(val, numCols) {
+        var w = $('#cy').width();
+        var snapSpacing = w / numCols / 2;
+        return Math.round(val/snapSpacing) * snapSpacing;
+    };
+
+    cy.on('free', function(evt) {
+        if(snapToGrid && evt.cyTarget.isNode()) {
+            var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
+            var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
+            evt.cyTarget.renderedPosition('x', closestX);
+            evt.cyTarget.renderedPosition('y', closestY);
+        }
+
+    });
+
+    cy.on('tap', function(evt) {
+        if (evt.cyTarget === cy) { //clicked on background, add a node
             console.log("clicked on background");
-            if(editMode) {
+            if (editMode) {
                 //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
-                //if(snapToGrid) {
-                //    addNode(evt.cyRenderedPosition.x+10, evt.cyRenderedPosition.y+10);
-                //} else {
+                if (snapToGrid) {
+                    var closestX = calcSnapLoc(evt.cyRenderedPosition.x, 24);
+                    var closestY = calcSnapLoc(evt.cyRenderedPosition.y, 24);
+                    ;
+                    addNode(closestX, closestY);
+                } else {
                     addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
-                //}
-            }
-        } //clicked on background
-
-        //edit mode, adding nodes
-        else {
-            //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
-            if(editMode && evt.cyTarget.isNode()) {
-                var selected = cy.$(':selected');
-                //console.log(selected[0].id() + " is selected");
-
-                //don't allow loops or more than one connection
-                if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.cyTarget) {
-                    if(selected[0].edgesWith(evt.cyTarget).length < 1) {
-                        addEdge(selected[0], evt.cyTarget).data("isVisited", true);
-                        //unselectAll(); //not working, probably bc select event happens after tap
-                    }
                 }
             }
-            //animate mode
-            else if(!editMode && evt.cyTarget.isNode()) {
+        } //clicked on background
+    });
 
-                if(lastVisited != null) { //if we've already started
-                    var edgesBetween = findEdgesBetween(lastVisited, evt.cyTarget).filter('[!isVisited][?isReachable]');
-                    if(edgesBetween.length > 0) {
-                        lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
-                        edgesBetween[0].data("isVisited", true);
-                        evt.cyTarget.data("isVisited",true);
+        cy.on('tapstart', function(evt) {
+            if (evt.cyTarget !== cy) {
+                //edit mode, adding nodes
+                //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
+                if (editMode && evt.cyTarget.isNode()) {
+                    var selected = cy.$(':selected');
+                    //console.log(selected[0].id() + " is selected");
+
+                    //don't allow loops or parallel edges
+                    if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.cyTarget) {
+                        if (selected[0].edgesWith(evt.cyTarget).length < 1) { //if not already connected by an edge (no parallel edges allowed)
+                            addEdge(selected[0], evt.cyTarget).data("isVisited", true);
+                            //unselectAll(); //not working, probably bc select event happens after tap
+                        }
+                    }
+                }
+                //animate mode
+                else if (!editMode && evt.cyTarget.isNode()) {
+
+                    if (lastVisited != null) { //if we've already started
+                        var edgesBetween = findEdgesBetween(lastVisited, evt.cyTarget).filter('[!isVisited][?isReachable]');
+                        if (edgesBetween.length > 0) {
+                            lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
+                            edgesBetween[0].data("isVisited", true);
+                            evt.cyTarget.data("isVisited", true);
+                            lastVisited = evt.cyTarget;
+                            lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
+                        }
+                    }
+                    else { //first one clicked
+                        evt.cyTarget.data("isVisited", true);
                         lastVisited = evt.cyTarget;
                         lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
                     }
-                }
-                else { //first one clicked
-                    evt.cyTarget.data("isVisited", true);
-                    lastVisited = evt.cyTarget;
-                    lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
-                }
 
-                cy.elements().data("isReachable", false);
-                var reachable = getReachableNodesFrom(cy.elements(), lastVisited);
-                reachable.data("isReachable", true);
+                    cy.elements().data("isReachable", false);
+                    var reachable = getReachableNodesFrom(cy.elements(), lastVisited);
+                    reachable.data("isReachable", true);
 
+                }
             }
-        }
-    });
+        });
 
     var findEdgesBetween = function(node1, node2) {
         return node1.edgesWith(node2);
@@ -691,6 +748,15 @@ $(function(){ // on dom ready
     $('#resetButton').click( function() {
         resetCircuit();
         updateBridges();
+    });
+
+    $('#snapToGrid').change(function () {
+        if($('#snapToGrid').prop("checked")) {
+            snapToGrid = true;
+        }
+        else {
+            snapToGrid = false;
+        }
     });
 
     $('#toggleModeButton').click( function() {
@@ -806,33 +872,7 @@ $(function(){ // on dom ready
 
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
-    //debugEles(cy.elements());
 
-    //updateBridges();
-
-    //var c = $("canvas[data-id='layer2-node']");
-    var c = $('#grid-canvas');
-    var ctx = c[0].getContext("2d");
-
-    var numCols = 24;
-    var w = $('#cy').width();
-    var h = $('#cy').height();
-    var spacing = w / numCols;
-    console.log(spacing);
-    console.log(w);
-    ctx.strokeStyle="#98D0E1";
-    ctx.beginPath();
-    ctx.imageSmoothingEnabled = true;
-    for(var row=0;row<w/spacing+1;row++) {
-        ctx.moveTo(0, spacing*row);
-        ctx.lineTo(w, spacing*row);
-    }
-    for(var col=0;col<numCols+1;col++) {
-        ctx.moveTo(spacing*col, 0);
-        ctx.lineTo(spacing*col, h);
-    }
-    ctx.stroke();
-
-    setDataForEach(cy.elements(),"isVisited", true);
+    drawGrid(24); //numCols, 6" with 1/4" spacing
 
 }); // on dom ready

@@ -35,3 +35,10 @@ body {
     /*background-color: #FFFF00;*/
     z-index: 0;
 }
+
+#toolbar {
+    background-color: #FFFFFF;
+    border-style: solid;
+    border-width: 5px;
+    border-color: #000000;
+}
