@@ -699,7 +699,7 @@ $(function(){ // on dom ready
         }
     };
 
-    $(document).keyup(function(e) {
+    $(document).keydown(function(e) {
         //console.log("key: " + e.keyCode);
         if(editMode) {
             if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
