@@ -818,7 +818,7 @@ $(function(){ // on dom ready
     });
 
     $('#snapToGrid').change(function () {
-        if($('#snapToGrid').prop("checked")) {
+        if($('#snapToGrid').is(":checked")) {
             snapToGrid = true;
         }
         else {
@@ -844,7 +844,7 @@ $(function(){ // on dom ready
             resetCircuit();
             addBackStitches();
             updateBridges();
-            hideDegree();
+            //hideDegree();
             this.blur();
         }
         else { //go to edit mode
