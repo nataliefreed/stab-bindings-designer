@@ -167,8 +167,7 @@ $(function(){ // on dom ready
     var addNode = function(x, y) {
         var node = cy.add({
             group: "nodes",
-            // Set id as n## as in Cytoscape 2.4.2
-            data: { id: "n"+cy.nodes().length },
+            data: { },
             renderedPosition: {x: x, y: y}
         });
         //console.log("added node " + node.id() + " at " + x + "," + y);
@@ -675,10 +674,10 @@ $(function(){ // on dom ready
         if (evt.cyTarget === cy && editMode) { //clicked on background, add a node
             //console.log("clicked on background");
                 var selected = cy.$(':selected');
-                console.log(selected);
+                //console.log(selected);
                 if (selected.length > 0) {
                     unselectAll();
-                    console.log("unselecting");
+                    //console.log("unselecting");
                 }
                 else {
                     //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
@@ -767,7 +766,7 @@ $(function(){ // on dom ready
 
 
     $('#downloadButton').click( function() {
-        console.log("download");
+        //console.log("download");
         var png = cy.png({bg:'#eeeeee'});
         window.open().location = png;
         this.blur();
@@ -892,50 +891,50 @@ $(function(){ // on dom ready
     }
 
     //across the top and long verticals
-    addEdgeByID('n0','n2');
-    addEdgeByID('n2','n3');
-    addEdgeByID('n2','n4');
-    addEdgeByID('n4','n5');
-    addEdgeByID('n4','n6');
+    addEdgeByID('ele0','ele2');
+    addEdgeByID('ele2','ele3');
+    addEdgeByID('ele2','ele4');
+    addEdgeByID('ele4','ele5');
+    addEdgeByID('ele4','ele6');
     //addEdgeByID('n6','n7');
     //addEdgeByID('n6','n8');
     //addEdgeByID('n8','n9');
     //addEdgeByID('n8','n10');
 
     //diagonals (small book)
-    addEdgeByID('n2','n10');
-    addEdgeByID('n10','n4');
-    addEdgeByID('n2','n8');
-    addEdgeByID('n4','n12');
+    addEdgeByID('ele2','ele10');
+    addEdgeByID('ele10','ele4');
+    addEdgeByID('ele2','ele8');
+    addEdgeByID('ele4','ele12');
 
     //small verticals (small book)
-    addEdgeByID('n8','n9');
-    addEdgeByID('n12','n13');
-    addEdgeByID('n10','n11');
+    addEdgeByID('ele8','ele9');
+    addEdgeByID('ele12','ele13');
+    addEdgeByID('ele10','ele11');
 
     //small horizontals (small book)
-    addEdgeByID('n1','n8');
-    addEdgeByID('n12','n7');
+    addEdgeByID('ele1','ele8');
+    addEdgeByID('ele12','ele7');
 
     //diagonals
-    //addEdgeByID('n2','n12');
-    //addEdgeByID('n2','n14');
-    //addEdgeByID('n4','n14');
-    //addEdgeByID('n4','n16');
-    //addEdgeByID('n6','n16');
-    //addEdgeByID('n6','n18');
-    //addEdgeByID('n8','n18');
-    //addEdgeByID('n8','n20');
+    //addEdgeByID('ele2','ele12');
+    //addEdgeByID('ele2','ele14');
+    //addEdgeByID('ele4','ele14');
+    //addEdgeByID('ele4','ele16');
+    //addEdgeByID('ele6','ele16');
+    //addEdgeByID('ele6','ele18');
+    //addEdgeByID('ele8','ele18');
+    //addEdgeByID('ele8','ele20');
     //
     ////small verticals and 2 small horizontals at edge
-    //addEdgeByID('n12','n13');
-    //addEdgeByID('n14','n15');
-    //addEdgeByID('n16','n17');
-    //addEdgeByID('n18','n19');
-    //addEdgeByID('n20','n21');
+    //addEdgeByID('ele12','ele13');
+    //addEdgeByID('ele14','ele15');
+    //addEdgeByID('ele16','ele17');
+    //addEdgeByID('ele18','ele19');
+    //addEdgeByID('ele20','ele21');
     //
-    //addEdgeByID('n12','n1');
-    //addEdgeByID('n20','n11');
+    //addEdgeByID('ele12','ele1');
+    //addEdgeByID('ele20','ele11');
 
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
