@@ -668,6 +668,20 @@ $(function(){ // on dom ready
             evt.cyTarget.renderedPosition('x', closestX);
             evt.cyTarget.renderedPosition('y', closestY);
         }
+
+        //don't allow nodes to go off-screen
+        if(evt.cyTarget.renderedPosition().x < 0) {
+            evt.cyTarget.renderedPosition('x', 0);
+        }
+        else if(evt.cyTarget.renderedPosition().x > $('#cy').width()) {
+            evt.cyTarget.renderedPosition('x', $('#cy').width());
+        }
+        else if(evt.cyTarget.renderedPosition().y < 0) {
+            evt.cyTarget.renderedPosition('y', 0);
+        }
+        else if(evt.cyTarget.renderedPosition().y > $('#cy').height()) {
+            evt.cyTarget.renderedPosition('y', $('#cy').height());
+        }
     });
 
     cy.on('tapstart', function(evt) {
