@@ -673,13 +673,13 @@ $(function(){ // on dom ready
         if(evt.cyTarget.renderedPosition().x < 0) {
             evt.cyTarget.renderedPosition('x', 0);
         }
-        else if(evt.cyTarget.renderedPosition().x > $('#cy').width()) {
+        if(evt.cyTarget.renderedPosition().x > $('#cy').width()) {
             evt.cyTarget.renderedPosition('x', $('#cy').width());
         }
-        else if(evt.cyTarget.renderedPosition().y < 0) {
+        if(evt.cyTarget.renderedPosition().y < 0) {
             evt.cyTarget.renderedPosition('y', 0);
         }
-        else if(evt.cyTarget.renderedPosition().y > $('#cy').height()) {
+        if(evt.cyTarget.renderedPosition().y > $('#cy').height()) {
             evt.cyTarget.renderedPosition('y', $('#cy').height());
         }
     });
