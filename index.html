@@ -13,6 +13,7 @@
 
   <script src="js/graphs.js"></script>
   <script src="js/bootstrap.file-input.js"></script>
+  <script src="js/bootstrap.min.js"></script>
 
   <meta charset="utf-8">
   <title>Stab Bindings Designer</title>
@@ -25,11 +26,15 @@
 
 <div class="container">
 
+  <img src="images/title.png" alt="Stab Book Designer" style="width:80%;">
+
   <!-- Nav tabs -->
   <ul class="nav nav-tabs top-space" role="tablist" data-tabs="tabs">
-    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stab Bindings Designer</a></li>
+    <!--<li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab"><img src="images/app.png"/></a></li>-->
     <!--<li role="presentation"><a href="#tutorial" aria-controls="tutorial" role="tab" data-toggle="tab">Tutorial</a></li>-->
-    <!--<li role="presentation"><a href="#about" aria-controls="about" role="tab" data-toggle="tab">About</a></li>-->
+    <li role="presentation"><a href="#about" aria-controls="about" role="tab" data-toggle="tab">About</a></li>
+    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">The App</a></li>
+    <li role="presentation"><a href="#gallery" aria-controls="gallery" role="tab" data-toggle="tab">Gallery</a></li>
   </ul>
 
   <!-- Tab panes -->
@@ -111,10 +116,48 @@
       <!--<input type="text" class="form-control" id="book-height">Book height in inches</input>-->
     <!--</div>-->
 <!--</div>-->
+
     </div>
 
-    <!--<div role="tabpanel" class="tab-pane" id="tutorial">testing</div>-->
-    <!--<div role="tabpanel" class="tab-pane" id="about">123</div>-->
+
+    <div role="tabpanel" class="tab-pane" id="about">
+      <div class="row clearfix top-space">
+        <div class="col-md-6 column">
+
+          <p>This app helps you create custom stab bound book patterns (while exploring graph theory math!)</p>
+          <p>Asian Stab Binding is an elegant bookbinding technique originally developed in China, later spreading to Japan and Korea.</p>
+          <p>This exploration is by <a href="http://nataliefreed.com">Natalie Freed</a> and <a href="http://www.beccarose.co.uk/">Becca Rose Glowacki</a>.</p>
+          <p>More documentation coming soon! In the meantime, check out Becca's GIF and Natalie's book below for more information.</p>
+          <!--<p>If you would like to use this as a classroom activity, you might be interested in <a href="https://docs.google.com/document/d/1ydlVRKQho79ZRlAMhy-iPRHxQ0SPHhd16VXdFKSpMqg/">this guide</a> we developed for a workshop at the Exploratorium in collaboration with Paula Hooper, or this blog post... </p>-->
+          
+          <img src="images/bg stab binding animation.gif" alt="Becca Glowacki Stab Binding Animation" style="width:100%;">
+          <iframe class="top-space" src="https://docs.google.com/viewer?srcid=0B5Wi9harvTDXODdrME16VzVpbGs&pid=explorer&efh=false&a=v&chrome=false&embedded=true" width="580px" height="480px""></iframe>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div role="tabpanel" class="tab-pane" id="gallery">
+
+      <div class="row clearfix top-space">
+
+        <div class="col-md-6 column">
+          <img class="top-space" src="images/gallery/becca meme books.jpg" alt="Becca Glowacki Meme Animal Books" style="width:100%;">
+          <img class="top-space" src="images/gallery/nf diamonds and dna.jpg" alt="NF Diamonds and DNA" style="width:100%;">
+          <img class="top-space" src="images/gallery/nf houses and squares.jpg" alt="NF Houses and Squares" style="width:100%;">
+        </div>
+
+        <div class="col-md-6 column">
+          <img class="top-space" src="images/gallery/xtech%20designs%20multicolor.JPG" alt="Exploratorium XTech Designs Multicolor" style="width:100%;">
+          <img class="top-space" src="images/gallery/xtech%20designs%20with%20templates.JPG" alt="Exploratorium XTech Designs with Templates" style="width:100%;">
+          <img class="top-space" src="images/gallery/nf%20hello%20world%20and%20other%20stab%20books.jpeg" alt="NF Hello World and Others" style="width:100%;">
+          <!--<img class="top-space" src="images/gallery/xtech%20designs%20practice%20stars.JPG" alt="Exploratorium XTech Designs Practice Stars" style="width:100%;">-->
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
 
