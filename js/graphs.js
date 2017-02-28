@@ -684,6 +684,17 @@ $(function(){ // on dom ready
         }
     });
 
+
+    //fixes bug where cytoscape doesn't update position when scroll event happens outside of its div
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("href") // activated tab
+        if(target == "#home") {
+            cy.resize();
+        }
+    });
+
+    //
+
     cy.on('tapstart', function(evt) {
         if (evt.cyTarget === cy && editMode) { //clicked on background, add a node
             //console.log("clicked on background");
