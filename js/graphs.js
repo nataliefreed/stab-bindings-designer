@@ -279,6 +279,23 @@ $(function(){ // on dom ready
 
     }
 
+    var updateTotalLength = function(graph) {
+        var totalEdgeLength = 0.;
+
+        graph.edges().forEach(function( e ){
+            totalEdgeLength += edgeLength(e);
+        });
+
+        var numHoleStitches = graph.edges().length;
+
+        var displayText = $('#totalLength');
+
+        var spine_length = $('#cy').width();
+        totalEdgeLength /= spine_length;
+
+        displayText.text('Total length of thread needed for all edges: ' + totalEdgeLength.toFixed(2) + ' * spine length + ' + numHoleStitches + ' * book thickness + a little more for needle');
+    }
+
     var unselectAll = function() {
         var selected = cy.$(':selected');
         //console.log(selected.length);
@@ -652,6 +669,7 @@ $(function(){ // on dom ready
                 }
             }
         }
+        updateTotalLength(cy.elements());
     });
 
     var calcSnapLoc = function(val, numCols) {
@@ -682,6 +700,8 @@ $(function(){ // on dom ready
         if(evt.cyTarget.renderedPosition().y > $('#cy').height()) {
             evt.cyTarget.renderedPosition('y', $('#cy').height());
         }
+
+        updateTotalLength(cy.elements());
     });
 
 
@@ -862,6 +882,7 @@ $(function(){ // on dom ready
             //$('#saveButton').hide();
             $('#drawing-instructions').hide();
             $('#toggleModeButton').text("Switch to Edit Mode");
+            $('#totalLength').show(); // Only show in animate mode because value in edit mode doesn't reflect needed amount of string
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
@@ -881,6 +902,7 @@ $(function(){ // on dom ready
             //$('#saveButton').show();
             $('#drawing-instructions').show();
             $('#toggleModeButton').text("Switch to Animate Mode");
+            $('#totalLength').hide();
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();
