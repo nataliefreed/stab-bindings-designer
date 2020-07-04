@@ -43,7 +43,7 @@ $(function(){ // on dom ready
         style: cytoscape.stylesheet()
             .selector('node')
             .css({
-                'content': 'data(name)',
+                'content': 'data(id)',
                 'text-valign': 'center',
                 'color': 'white',
                 'background-color': '#888',
@@ -178,14 +178,7 @@ $(function(){ // on dom ready
         var edge = cy.add({group: "edges", data: {source: source.id(), target: target.id()}});
         //console.log("added edge " + edge.id());
         return edge;
-    }
-
-    var addEdgeByID = function(source, target) {
-        var edge = cy.add({group: "edges", data: {source: source, target: target}});
-        //console.log("added edge " + edge.id());
-        return edge;
-    }
-
+    }   
 
     var addBackStitches = function() {
         var edges = cy.edges();
@@ -206,8 +199,6 @@ $(function(){ // on dom ready
             }
         });
     };
-
-
 
     //check if graph is fully connected
     var updateConnected = function(graph) {
@@ -379,12 +370,8 @@ $(function(){ // on dom ready
         return result;
     };
 
-    //to use as filter
-    //is it a node?
-    var isNode = function(i, ele) { return ele.isNode(); };
-
     //is it a tree edge? (filter)
-    var isTreeEdge = function(j,ele) { return info(ele).isTreeEdge; };
+    var isTreeEdge = function(ele, j, eles) { return info(ele).isTreeEdge; };
 
     var treeNeighbors = function(node) {
         var nodes = [];
@@ -506,7 +493,7 @@ $(function(){ // on dom ready
                 if(ci.H > ni.H) ni.H = ci.H;
             });
             node.connectedEdges().forEach(function(edge) {
-                if(isTreeEdge(-1,edge)) return;
+                if(isTreeEdge(edge)) return;
                 var neighbor;
                 if(edge.source() == node) neighbor = edge.target();
                 if(edge.target() == node) neighbor = edge.source();
@@ -545,13 +532,14 @@ $(function(){ // on dom ready
     //assumes all nodes referenced by edges in the collection are included
     var properSubgraph = function(collection) {
         var subgraph = cytoscape({ headless: true });
-        collection.forEach(function(ele, i, eles) {
-            var added;
-            if(ele.isEdge()) {
-                added = subgraph.add( { group: ele.group(), data: { id: ele.id(), source: ele.source().id(), target: ele.target().id() }} );
-            } else {
-                added = subgraph.add( { group: ele.group(), data: { id: ele.id() }} );
-            }
+        // Start by adding all nodes so that edges won't miss them
+        collection.filter('node').forEach(function(ele, i, eles) {
+            var added = subgraph.add( { group: ele.group(), data: { id: ele.id() }} );
+            added.data('original', ele);
+        });
+        // Then add all edges
+        collection.filter('edge').forEach(function(ele, i, eles) {
+            var added = subgraph.add( { group: ele.group(), data: { id: ele.id(), source: ele.source().id(), target: ele.target().id() }} );
             added.data('original', ele);
         });
         return subgraph;
@@ -645,14 +633,14 @@ $(function(){ // on dom ready
     }
 
     cy.on('mouseover', function(evt) {
-        if (editMode && evt.cyTarget !== cy && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
-            evt.cyTarget.data("hovered", true);
+        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+            evt.target.data("hovered", true);
         }
     });
 
     cy.on('mouseout', function(evt) {
-        if (editMode && evt.cyTarget !== cy && (evt.cyTarget.isNode() || evt.cyTarget.isEdge())) {
-            evt.cyTarget.data("hovered", false);
+        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+            evt.target.data("hovered", false);
         }
     });
 
@@ -661,11 +649,11 @@ $(function(){ // on dom ready
         updateDegree(cy.elements(), fullyConnected);
         if(editMode) {
             if (snapToGrid) {
-                if(snapToGrid && evt.cyTarget.isNode()) {
-                    var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
-                    var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
-                    evt.cyTarget.renderedPosition('x', closestX);
-                    evt.cyTarget.renderedPosition('y', closestY);
+                if(snapToGrid && evt.target.isNode()) {
+                    var closestX = calcSnapLoc(evt.target.renderedPosition().x, 24);
+                    var closestY = calcSnapLoc(evt.target.renderedPosition().y, 24);
+                    evt.target.renderedPosition('x', closestX);
+                    evt.target.renderedPosition('y', closestY);
                 }
             }
         }
@@ -679,26 +667,26 @@ $(function(){ // on dom ready
     };
 
     cy.on('free', function(evt) { //letting go of a dragged node
-        if(snapToGrid && evt.cyTarget.isNode()) {
-            evt.cyTarget.data("hovered", false);
-            var closestX = calcSnapLoc(evt.cyTarget.renderedPosition().x, 24);
-            var closestY = calcSnapLoc(evt.cyTarget.renderedPosition().y, 24);
-            evt.cyTarget.renderedPosition('x', closestX);
-            evt.cyTarget.renderedPosition('y', closestY);
+        if(snapToGrid && evt.target.isNode()) {
+            evt.target.data("hovered", false);
+            var closestX = calcSnapLoc(evt.target.renderedPosition().x, 24);
+            var closestY = calcSnapLoc(evt.target.renderedPosition().y, 24);
+            evt.target.renderedPosition('x', closestX);
+            evt.target.renderedPosition('y', closestY);
         }
 
         //don't allow nodes to go off-screen
-        if(evt.cyTarget.renderedPosition().x < 0) {
-            evt.cyTarget.renderedPosition('x', 0);
+        if(evt.target.renderedPosition().x < 0) {
+            evt.target.renderedPosition('x', 0);
         }
-        if(evt.cyTarget.renderedPosition().x > $('#cy').width()) {
-            evt.cyTarget.renderedPosition('x', $('#cy').width());
+        if(evt.target.renderedPosition().x > $('#cy').width()) {
+            evt.target.renderedPosition('x', $('#cy').width());
         }
-        if(evt.cyTarget.renderedPosition().y < 0) {
-            evt.cyTarget.renderedPosition('y', 0);
+        if(evt.target.renderedPosition().y < 0) {
+            evt.target.renderedPosition('y', 0);
         }
-        if(evt.cyTarget.renderedPosition().y > $('#cy').height()) {
-            evt.cyTarget.renderedPosition('y', $('#cy').height());
+        if(evt.target.renderedPosition().y > $('#cy').height()) {
+            evt.target.renderedPosition('y', $('#cy').height());
         }
 
         updateTotalLength(cy.elements());
@@ -716,7 +704,7 @@ $(function(){ // on dom ready
     //
 
     cy.on('tapstart', function(evt) {
-        if (evt.cyTarget === cy && editMode) { //clicked on background, add a node
+        if (evt.target === cy && editMode) { //clicked on background, add a node
             //console.log("clicked on background");
                 var selected = cy.$(':selected');
                 //console.log(selected);
@@ -726,40 +714,40 @@ $(function(){ // on dom ready
                 }
                 else {
                     //renderedPosition: { x: evt.originalEvent.x - $('#cy').offset().left, y: evt.originalEvent.y - $('#cy').offset().top }
-                    addNode(evt.cyRenderedPosition.x, evt.cyRenderedPosition.y);
+                    addNode(evt.renderedPosition.x, evt.renderedPosition.y);
                 }
             }
             else { //if not on background
                 //edit mode, adding nodes
-                //console.log( 'clicked ' + evt.cyTarget.id() + " " + evt.cyTarget.renderedPosition.x + "," +  evt.cyTarget.renderedPosition.y);
-                if (editMode && evt.cyTarget.isNode()) {
+                //console.log( 'clicked ' + evt.target.id() + " " + evt.target.renderedPosition.x + "," +  evt.target.renderedPosition.y);
+                if (editMode && evt.target.isNode()) {
                     var selected = cy.$(':selected');
                     //console.log(selected[0].id() + " is selected");
 
                     //don't allow loops or parallel edges
-                    if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.cyTarget) {
-                        if (selected[0].edgesWith(evt.cyTarget).length < 1) { //if not already connected by an edge (no parallel edges allowed)
-                            addEdge(selected[0], evt.cyTarget).data("isVisited", true);
+                    if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.target) {
+                        if (selected[0].edgesWith(evt.target).length < 1) { //if not already connected by an edge (no parallel edges allowed)
+                            addEdge(selected[0], evt.target).data("isVisited", true);
                             //unselectAll(); //not working, probably bc select event happens after tap
                         }
                     }
                 }
                 //animate mode
-                else if (!editMode && evt.cyTarget.isNode()) {
+                else if (!editMode && evt.target.isNode()) {
 
                     if (lastVisited != null) { //if we've already started
-                        var edgesBetween = findEdgesBetween(lastVisited, evt.cyTarget).filter('[!isVisited][?isReachable]');
+                        var edgesBetween = findEdgesBetween(lastVisited, evt.target).filter('[!isVisited][?isReachable]');
                         if (edgesBetween.length > 0) {
                             lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
                             edgesBetween[0].data("isVisited", true);
-                            evt.cyTarget.data("isVisited", true);
-                            lastVisited = evt.cyTarget;
+                            evt.target.data("isVisited", true);
+                            lastVisited = evt.target;
                             lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
                         }
                     }
                     else { //first one clicked
-                        evt.cyTarget.data("isVisited", true);
-                        lastVisited = evt.cyTarget;
+                        evt.target.data("isVisited", true);
+                        lastVisited = evt.target;
                         lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
                     }
 
@@ -920,68 +908,73 @@ $(function(){ // on dom ready
     var topOffset = $('#cy').offset().top;
 
     var numInnerHoles = 4;
+
+    var initNodes = [];
+    var pushNode = function(x, y) {
+        initNodes.push(addNode(x, y));
+    }
     for(var i=0;i<numInnerHoles;i++)
     {
-        addNode(x_spacing*i*2, y_spacing);
+        pushNode(x_spacing*i*2, y_spacing);
         if(i===0 || i === numInnerHoles-1) {
-            addNode(x_spacing*i*2, y_spacing*2);
+            pushNode(x_spacing*i*2, y_spacing*2);
         }
         else {
-            addNode(x_spacing*i*2, $('#cy').height());
+            pushNode(x_spacing*i*2, $('#cy').height());
         }
     }
 
     for(var i=0;i<numInnerHoles-1;i++)
     {
-        addNode(x_spacing*i*2+x_spacing, y_spacing*2);
-        addNode(x_spacing*i*2+x_spacing, $('#cy').height());
+        pushNode(x_spacing*i*2+x_spacing, y_spacing*2);
+        pushNode(x_spacing*i*2+x_spacing, $('#cy').height());
     }
 
     //across the top and long verticals
-    addEdgeByID('ele0','ele2');
-    addEdgeByID('ele2','ele3');
-    addEdgeByID('ele2','ele4');
-    addEdgeByID('ele4','ele5');
-    addEdgeByID('ele4','ele6');
+    addEdge(initNodes[0], initNodes[2]);
+    addEdge(initNodes[2], initNodes[3]);
+    addEdge(initNodes[2], initNodes[4]);
+    addEdge(initNodes[4], initNodes[5]);
+    addEdge(initNodes[4], initNodes[6]);
     //addEdgeByID('n6','n7');
     //addEdgeByID('n6','n8');
     //addEdgeByID('n8','n9');
     //addEdgeByID('n8','n10');
 
     //diagonals (small book)
-    addEdgeByID('ele2','ele10');
-    addEdgeByID('ele10','ele4');
-    addEdgeByID('ele2','ele8');
-    addEdgeByID('ele4','ele12');
+    addEdge(initNodes[2], initNodes[10]);
+    addEdge(initNodes[10], initNodes[4]);
+    addEdge(initNodes[2], initNodes[8]);
+    addEdge(initNodes[4], initNodes[12]);
 
     //small verticals (small book)
-    addEdgeByID('ele8','ele9');
-    addEdgeByID('ele12','ele13');
-    addEdgeByID('ele10','ele11');
+    addEdge(initNodes[8], initNodes[9]);
+    addEdge(initNodes[12], initNodes[13]);
+    addEdge(initNodes[10], initNodes[11]);
 
     //small horizontals (small book)
-    addEdgeByID('ele1','ele8');
-    addEdgeByID('ele12','ele7');
+    addEdge(initNodes[1], initNodes[8]);
+    addEdge(initNodes[12], initNodes[7]);
 
     //diagonals
-    //addEdgeByID('ele2','ele12');
-    //addEdgeByID('ele2','ele14');
-    //addEdgeByID('ele4','ele14');
-    //addEdgeByID('ele4','ele16');
-    //addEdgeByID('ele6','ele16');
-    //addEdgeByID('ele6','ele18');
-    //addEdgeByID('ele8','ele18');
-    //addEdgeByID('ele8','ele20');
+    //addEdge(initNodes[2], initNodes[12]);
+    //addEdge(initNodes[2], initNodes[14]);
+    //addEdge(initNodes[4], initNodes[14]);
+    //addEdge(initNodes[4], initNodes[16]);
+    //addEdge(initNodes[6], initNodes[16]);
+    //addEdge(initNodes[6], initNodes[18]);
+    //addEdge(initNodes[8], initNodes[18]);
+    //addEdge(initNodes[8], initNodes[20]);
     //
     ////small verticals and 2 small horizontals at edge
-    //addEdgeByID('ele12','ele13');
-    //addEdgeByID('ele14','ele15');
-    //addEdgeByID('ele16','ele17');
-    //addEdgeByID('ele18','ele19');
-    //addEdgeByID('ele20','ele21');
+    //addEdge(initNodes[12], initNodes[13]);
+    //addEdge(initNodes[14], initNodes[15]);
+    //addEdge(initNodes[16], initNodes[17]);
+    //addEdge(initNodes[18], initNodes[19]);
+    //addEdge(initNodes[20], initNodes[21]);
     //
-    //addEdgeByID('ele12','ele1');
-    //addEdgeByID('ele20','ele11');
+    //addEdge(initNodes[12], initNodes[1]);
+    //addEdge(initNodes[20], initNodes[11]);
 
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
