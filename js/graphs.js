@@ -26,21 +26,131 @@ $(function(){ // on dom ready
         $(this).val(setBookHeightInInches($(this).val()));
     });
 
-    var edgeLength = function(edge) {
+    const edgeLength = function(edge) {
         var src = edge.source().position();
         var dst = edge.target().position();
         return Math.hypot(src.x - dst.x, src.y - dst.y);
     };
-    var clamp = function(x, lo, hi) {
+
+    const clamp = function(x, lo, hi) {
         if(x < lo) return lo;
         if(hi < x) return hi;
         return x;
-    }
+    };
+
+/*
+Lifecycle of an edge:
+ * In edit mode:
+   * All edges are black and straight
+   * ...unless they are hovered/selected
+ * In animate mode:
+   * At the start:
+     * Edges are top (dashed) or bottom (dotted) edges and are all 'unreachable'
+   * The first node is selected:
+     * The selected node is now pink
+     * Edges that could be next are now highlighted in pink
+     * Nodes that could be next are highlighted in yellow
+   * An edge/node is hovered over
+     * If reachable destination node and edge are highlighted in yellow
+   * A new node is selected:
+     * Edges that have been stitched are now thicker, line style/color based on top bottom
+
+The full set of animate mode styles for edges are:
+ * top+unreachable          black,  thin,  dashed
+ * bottom+unreachable       black,  thin,  dotted
+ * top+reachable            pink,   thin,  dashed
+ * bottom+reachable         pink,   thin,  dotted
+ * top+reachable+hovered    yellow, thin,  dashed
+ * bottom+reachable+hovered yellow, thin,  dotted
+ * top+stitched             black,  thick, solid
+ * bottom+stitched          gray,   thick, solid
+
+The full set of animate mode styles for nodes are:
+ * current                  pink
+ * possiblyNext             yellow
+ * possiblyNext+hovered     ???
+ * other                    gray
+
+The full set of edit mode styles for edges are:
+ * not-hovered: black,  thick, solid
+ * hovered:     yellow, thick, solid
+
+The full set of edit mode styles for nodes are:
+ * hovered: yellow
+ * other:   gray
+*/
+    const substyles = {
+        activeColor: '#FFB300',
+        hoveredColor: '#FFDB86',
+        thinLineWidth: 1,
+        boldLineWidth: 4,
+    };
 
     var cy = cytoscape({
         container: $('#cy')[0],
 
         style: cytoscape.stylesheet()
+            // This is the default for edges in edit mode
+            .selector('edge[?isEditMode]')
+            .css({
+                'line-color': 'black',
+                'line-style': 'solid',
+                'width': substyles.boldLineWidth,
+            })
+            // In edit mode any edge can be hovered over
+            .selector('edge[?isEditMode][?hovered]')
+            .css({
+                'line-color': substyles.hoveredColor,
+            })
+            // In edit mode any edge can be selected
+            .selector('edge[?isEditMode]:selected')
+            .css({
+                'line-color': substyles.activeColor,
+            })
+            .selector('edge[!isEditMode]')
+            .css({
+                'curve-style': 'unbundled-bezier',
+                'control-point-weights': [0.5],
+                'control-point-distances': function(ele) {
+                    // All edges in animate mode should come in opposite direction pairs
+                    // We offset midpoint of each outward
+                    // Set midpoint distance based on edge length, clamped to a reasonable range
+                    return [clamp(edgeLength(ele)/8.,5.,12.)];
+                }
+            })
+            .selector('edge[!isEditMode][!isVisited][!isBackStitch]')
+            .css({
+                'line-style': 'dashed',
+                'width': substyles.thinLineWidth,
+                'line-color': 'black',
+            })
+            .selector('edge[!isEditMode][!isVisited][?isBackStitch]')
+            .css({
+                'line-style': 'dotted',
+                'width': substyles.thinLineWidth,
+                'line-color': 'black',
+            })
+            .selector('edge[!isEditMode][?isVisited][!isBackStitch]')
+            .css({
+                'line-style': 'solid',
+                'width': substyles.boldLineWidth,
+                'line-color': 'black',
+            })
+            .selector('edge[!isEditMode][?isVisited][?isBackStitch]')
+            .css({
+                'line-style': 'solid',
+                'width': substyles.boldLineWidth,
+                'line-color': 'gray',
+            })
+            .selector('edge[!isEditMode][?isReachable]')
+            .css({
+                'line-color': substyles.activeColor,
+            })
+            // Mouseover, but only for unvisited nodes that might be next
+            .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
+            .css({
+                'line-color': substyles.hoveredColor,
+            })
             .selector('node')
             .css({
                 'content': 'data(id)',
@@ -51,79 +161,18 @@ $(function(){ // on dom ready
                 'width': 20,
                 'height': 20
             })
-            .selector('edge')
-            .css({
-                'curve-style': 'unbundled-bezier',
-                'control-point-weights': [0.5],
-                'control-point-distances': function(ele) {
-                    var overlapping = ele.codirectedEdges();
-                    // Check if we have multiple edges between this pair of nodes
-                    if(overlapping.length >= 2) {
-                        // If so we will need to have an offset midpoint to be distinct
-                        // Set midpoint distance based on edge length, clamped to a reasonable range
-                        var distance = clamp(edgeLength(ele)/8.,5.,12.);
-                        // Find the other edge so we can make sure we move in a different direction
-                        var other = (overlapping[0] === ele) ? overlapping[1] : overlapping[0];
-                        var sign = (other.id() < ele.id()) ? 1 : -1;
-                        return [distance*sign];
-                    }
-                    else {
-                        return [0.];
-                    }
-                }
-            })
-            .selector('node:selected') //selected node in edit mode
+            .selector('node:selected') //selected node in edit or animate mode
             .css({
                 'background-color': '#FFB300',
                 'color': 'black',
             })
-            .selector('edge[!isBridgeEdge]') //non-bridge edges in animate mode
-            .css( {
-                'width': 1,
-                'line-color': '#000000',
-            })
-            .selector('[?isBridgeEdge]')
-            .css({
-                'width': 1,
-                'line-color': '#000000',
-                'line-style': "dashed"
-            })
-            .selector('edge:selected')
-            .css({
-                'line-color': '#FFB300',
-                'width': 4
-            })
-            .selector('edge[?isVisited]')
-            .css({
-                //'line-color': '#B200B2',
-                //'background-color': '#B200B2'
-                //'line-style': "dashed",
-                'width': 5
-            })
-            .selector('[?isReachable]')
-            .css({
-                'line-color': '#f43fc1'
-                //'background-color': '#66FF33'
-            })
-            .selector('node[?isCurrentVisited]')
-            .css({
-                'background-color': '#f43fc1'
-            })
-            .selector('edge[?inEditMode]') //edges in edit mode
-            .css( {
-                'width': 4
-            })
-            //.selector('node[!inEditMode]') //edges in edit mode
-            //.css( {
-            //    'color': '#888'
-            //})
             .selector('node[?hovered]') //mouseover
             .css( {
                 'background-color': '#FFDB86'
             })
-            .selector('edge[?hovered]') //mouseover
-            .css( {
-                'line-color': '#FFDB86'
+            .selector('node[?isCurrentVisited]')
+            .css({
+                'background-color': '#f43fc1'
             }),
 
         zoomingEnabled: false,
@@ -141,7 +190,13 @@ $(function(){ // on dom ready
         layout: {
             name: 'preset',
             padding: 10
-        }
+        },
+
+        // Store traversal info in the graph's data
+        data: {
+            nextStitchIsBackStitch: false,
+            lastVisited: null,
+        },
     });
 
     var setBookWidthInInches = function(w) {
@@ -175,27 +230,38 @@ $(function(){ // on dom ready
     }
 
     var addEdge = function(source, target) {
-        var edge = cy.add({group: "edges", data: {source: source.id(), target: target.id()}});
+        var edge = cy.add({
+                group: "edges",
+                data: {
+                    source: source.id(),
+                    target: target.id(),
+                    isEditMode: editMode,
+            }});
         //console.log("added edge " + edge.id());
         return edge;
-    }   
+    }
 
     var addBackStitches = function() {
         var edges = cy.edges();
-        edges.forEach(function (ele, i, eles) {
-            var parallelEdges = cy.collection([ele]).parallelEdges();
-            if (parallelEdges.length < 2) {
-                addEdge(ele.source(), ele.target()); //add another edge between those two nodes
+        edges.forEach(function (topEdge, i, eles) {
+            var parallelEdges = cy.collection([topEdge]).parallelEdges();
+            if(parallelEdges.length < 2) {
+                // WARNING: Rendering requires that the back stitch goes in the opposite direction as the top!
+                var bottomEdge = addEdge(topEdge.target(), topEdge.source()); //add another edge between those two nodes
+                bottomEdge.data('isBackStitch', true);
             }
+            else {
+                console.warn('Found', parallelEdges.length, 'parallel edges!');
+            }
+            topEdge.data('isBackStitch', false);
         });
     };
 
     var removeBackStitches = function() {
         var edges = cy.edges();
         edges.forEach(function (ele, i, eles) {
-            var parallelEdges = cy.collection([ ele ]).parallelEdges();
-            for(var i=0;i<parallelEdges.length-1;i++) {
-                parallelEdges[i].remove();
+            if(ele.data('isBackStitch')) {
+                ele.remove();
             }
         });
     };
@@ -565,6 +631,14 @@ $(function(){ // on dom ready
 //    });
     }
 
+    var setAllEdgeEditMode = function(isEditMode) {
+        cy.batch(function() {
+            cy.edges().forEach(function(ele, i, eles) {
+                ele.data("isEditMode", isEditMode);
+            });
+        });
+    }
+
     function getNumComponents(graph) {
         initInfo(graph);
         var tree = graph.kruskal();
@@ -577,16 +651,14 @@ $(function(){ // on dom ready
     //Events
 
     var resetCircuit = function() {
-        circuit = cy.collection(); //starts out empty
+        cy.data("nextStitchIsBackStitch", false);
+        cy.data("lastVisited", null);
         setDataForEach(cy.elements(),"isVisited", false);
         setDataForEach(cy.elements(),"isReachable", false);
         setDataForEach(cy.elements(),"isBridgeEdge", false);
         setDataForEach(cy.elements(),"isCurrentVisited", false);
-        lastVisited = null;
     };
 
-    var circuit;
-    var lastVisited;
     resetCircuit();
 
     var drawGrid = function(numCols) {
@@ -649,7 +721,7 @@ $(function(){ // on dom ready
         updateDegree(cy.elements(), fullyConnected);
         if(editMode) {
             if (snapToGrid) {
-                if(snapToGrid && evt.target.isNode()) {
+                if(snapToGrid && evt.target !== cy && evt.target.isNode()) {
                     var closestX = calcSnapLoc(evt.target.renderedPosition().x, 24);
                     var closestY = calcSnapLoc(evt.target.renderedPosition().y, 24);
                     evt.target.renderedPosition('x', closestX);
@@ -667,7 +739,7 @@ $(function(){ // on dom ready
     };
 
     cy.on('free', function(evt) { //letting go of a dragged node
-        if(snapToGrid && evt.target.isNode()) {
+        if(snapToGrid && evt.target !== cy && evt.target.isNode()) {
             evt.target.data("hovered", false);
             var closestX = calcSnapLoc(evt.target.renderedPosition().x, 24);
             var closestY = calcSnapLoc(evt.target.renderedPosition().y, 24);
@@ -704,8 +776,9 @@ $(function(){ // on dom ready
     //
 
     cy.on('tapstart', function(evt) {
-        if (evt.target === cy && editMode) { //clicked on background, add a node
+        if (evt.target === cy) { //clicked on background
             //console.log("clicked on background");
+            if(editMode) { // in edit mode add a node
                 var selected = cy.$(':selected');
                 //console.log(selected);
                 if (selected.length > 0) {
@@ -717,47 +790,48 @@ $(function(){ // on dom ready
                     addNode(evt.renderedPosition.x, evt.renderedPosition.y);
                 }
             }
-            else { //if not on background
-                //edit mode, adding nodes
-                //console.log( 'clicked ' + evt.target.id() + " " + evt.target.renderedPosition.x + "," +  evt.target.renderedPosition.y);
-                if (editMode && evt.target.isNode()) {
-                    var selected = cy.$(':selected');
-                    //console.log(selected[0].id() + " is selected");
+        }
+        else { //if not on background
+            //edit mode, adding nodes
+            //console.log( 'clicked ' + evt.target.id() + " " + evt.target.renderedPosition.x + "," +  evt.target.renderedPosition.y);
+            if (editMode && evt.target.isNode()) {
+                var selected = cy.$(':selected');
+                //console.log(selected[0].id() + " is selected");
 
-                    //don't allow loops or parallel edges
-                    if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.target) {
-                        if (selected[0].edgesWith(evt.target).length < 1) { //if not already connected by an edge (no parallel edges allowed)
-                            addEdge(selected[0], evt.target).data("isVisited", true);
-                            //unselectAll(); //not working, probably bc select event happens after tap
-                        }
+                //don't allow loops or parallel edges
+                if (selected.length > 0 && selected[0].isNode() && selected[0] != evt.target) {
+                    if (selected[0].edgesWith(evt.target).length < 1) { //if not already connected by an edge (no parallel edges allowed)
+                        addEdge(selected[0], evt.target).data("isVisited", true);
+                        //unselectAll(); //not working, probably bc select event happens after tap
                     }
-                }
-                //animate mode
-                else if (!editMode && evt.target.isNode()) {
-
-                    if (lastVisited != null) { //if we've already started
-                        var edgesBetween = findEdgesBetween(lastVisited, evt.target).filter('[!isVisited][?isReachable]');
-                        if (edgesBetween.length > 0) {
-                            lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
-                            edgesBetween[0].data("isVisited", true);
-                            evt.target.data("isVisited", true);
-                            lastVisited = evt.target;
-                            lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
-                        }
-                    }
-                    else { //first one clicked
-                        evt.target.data("isVisited", true);
-                        lastVisited = evt.target;
-                        lastVisited.data("isCurrentVisited", true); //mark the current one (for styling)
-                    }
-
-                    cy.elements().data("isReachable", false);
-                    var reachable = getReachableNodesFrom(cy.elements(), lastVisited);
-                    reachable.data("isReachable", true);
-
                 }
             }
-        });
+            //animate mode
+            else if (!editMode && evt.target.isNode()) {
+                var lastVisited = cy.data('lastVisited');
+                if (lastVisited != null) { //if we've already started
+                    var edgesBetween = findEdgesBetween(lastVisited, evt.target).filter('[!isVisited][?isReachable]');
+                    if (edgesBetween.length > 0) {
+                        lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
+                        edgesBetween[0].data("isVisited", true);
+                        evt.target.data("isVisited", true);
+                        cy.data('lastVisited', evt.target);
+                        evt.target.data("isCurrentVisited", true); //mark the current one (for styling)
+                        // Mark that we will switch to back/front stitches
+                        cy.data('nextStitchIsBackStitch', !cy.data('nextStitchIsBackStitch'));
+                    }
+                }
+                else { //first one clicked
+                    evt.target.data("isVisited", true);
+                    cy.data('lastVisited', evt.target);
+                    evt.target.data("isCurrentVisited", true); //mark the current one (for styling)
+                }
+
+                cy.elements().data("isReachable", false);
+                var reachable = getReachableNodesFrom(cy.elements(), cy.data('lastVisited'));
+                reachable.data("isReachable", true);
+            }
+        }});
 
     var findEdgesBetween = function(node1, node2) {
         return node1.edgesWith(node2);
@@ -770,16 +844,22 @@ $(function(){ // on dom ready
         }
         else {
             updateBridges();
+
             var adjacent = node.closedNeighborhood().filter('[!isVisited]'); //nodes and edges adjacent to me not yet visited
             var adjacentEdges = adjacent.filter('edge'); //edges adjacent to me not yet visited
             var notBridges = adjacentEdges.filter('[!isBridgeEdge]'); //edges adjacent to me not yet visited that are not bridges
+            var candidates;
             if(notBridges.length != 0) { //if we have some non-bridges
                 var nodesConnectedToNotBridges = notBridges.connectedNodes().filter('[!isVisited]').difference(node);
-                return notBridges.union(nodesConnectedToNotBridges);
+                candidates = notBridges.union(nodesConnectedToNotBridges);
             }
             else {
-                return adjacent;
+                candidates = adjacent;
             }
+            const nextStitchIsBackStitch = cy.data("nextStitchIsBackStitch");
+            return candidates.filter(function(ele, i, eles) {
+                        return ele.data("isBackStitch") == nextStitchIsBackStitch;
+            });
         }
     };
 
@@ -877,6 +957,7 @@ $(function(){ // on dom ready
             resetCircuit();
             addBackStitches();
             updateBridges();
+            setAllEdgeEditMode(false);
             //hideDegree();
             this.blur();
         }
@@ -896,6 +977,7 @@ $(function(){ // on dom ready
             resetCircuit();
             removeBackStitches();
             setDataForEach(cy.elements(),"isVisited", true);
+            setAllEdgeEditMode(true);
         }
         this.blur(); //this is not so good for accessibility so change it! leaving for now because need focus on cy canvas
     });
