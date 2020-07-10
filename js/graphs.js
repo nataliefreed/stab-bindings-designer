@@ -82,7 +82,7 @@ The full set of edit mode styles for nodes are:
     const substyles = {
         activeColor: '#FFB300',
         hoveredColor: '#FFDB86',
-        thinLineWidth: 1,
+        thinLineWidth: 2,
         boldLineWidth: 4,
     };
 
