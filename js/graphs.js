@@ -809,22 +809,57 @@ $(function(){ // on dom ready
         var save = document.createElement('a');
         save.download = "graph.json";
         //console.log(cy.elements().jsons());
-        save.href = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(cy.elements().jsons()));
+
+        var indices = {};
+        var minimalNodes = [];
+
+        cy.nodes().forEach(function(ele, i, eles) {
+            indices[ele.id()] = minimalNodes.length;
+            minimalNodes.push([ele.position('x'), ele.position('y')]);
+        });
+
+        var minimalEdges = [];
+        cy.edges().forEach(function(ele, i, eles) {
+            minimalEdges.push([indices[ele.source().id()], indices[ele.target().id()]]);
+        });
+
+        var minimalGraph = [minimalNodes, minimalEdges];
+
+        // nodes: [[x,y]]
+        // edges: [[n0, n1]]
+
+
+        save.href = 'data:text/json;charset=utf8,' + encodeURIComponent(JSON.stringify(minimalGraph));
         save.click();
     });
 
-    $('#loadButton').click( function(evt) {
-        var files = evt.target.files; // FileList object
+    $('#selectFile').change(function (){
 
-        //// files is a FileList of File objects. List some properties.
-        //var output = [];
-        //for (var i = 0, f; f = files[i]; i++) {
-        //    output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
-        //        f.size, ' bytes, last modified: ',
-        //        f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-        //        '</li>');
-        //}
-        //console.log(output);
+        var files = document.getElementById('selectFile').files; // FileList object
+        if(files.length != 1) {
+            // TODO: Tell user they tried to upload 0 or more than one files
+            return;
+        }
+        var fileToLoad = files[0];
+
+        var fileReader = new FileReader();
+        fileReader.onload = function(fileLoadedEvent) {
+            var rawText = fileLoadedEvent.target.result;
+            var minimalGraph = JSON.parse(rawText);
+            var newNodes = [];
+            var pushNode = function(x,y) {
+                newNodes.push(addNode(x, y));
+            }
+            minimalGraph[0].forEach(function(xy) {
+                pushNode(xy[0], xy[1]);
+            })
+            minimalGraph[1].forEach(function(src_dst) {
+                addEdge(newNodes[src_dst[0]], newNodes[src_dst[1]]).data("isVisited", true);
+            })
+        };
+        fileReader.readAsText(fileToLoad, "UTF-8");
+
+        $('#selectFile').val(''); //reset so that file handler will trigger again on same file
     });
 
     $('#deleteButton').click( function() {
