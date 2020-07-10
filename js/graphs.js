@@ -833,8 +833,9 @@ $(function(){ // on dom ready
         save.click();
     });
 
-    $('#loadFile').click( function(evt) {
-        var files = document.getElementById("selectFile").files; // FileList object
+    $('#selectFile').change(function (){
+
+        var files = document.getElementById('selectFile').files; // FileList object
         if(files.length != 1) {
             // TODO: Tell user they tried to upload 0 or more than one files
             return;
@@ -857,6 +858,8 @@ $(function(){ // on dom ready
             })
         };
         fileReader.readAsText(fileToLoad, "UTF-8");
+
+        $('#selectFile').val(''); //reset so that file handler will trigger again on same file
     });
 
     $('#deleteButton').click( function() {

@@ -36,13 +36,13 @@
     <!--<li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab"><img src="images/app.png"/></a></li>-->
     <!--<li role="presentation"><a href="#tutorial" aria-controls="tutorial" role="tab" data-toggle="tab">Tutorial</a></li>-->
     <li role="presentation"><a href="#about" aria-controls="about" role="tab" data-toggle="tab">About</a></li>
-    <li role="presentation"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">The App</a></li>
-    <li role="presentation" class="active"><a href="#gallery" aria-controls="gallery" role="tab" data-toggle="tab">Gallery</a></li>
+    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">The App</a></li>
+    <li role="presentation"><a href="#gallery" aria-controls="gallery" role="tab" data-toggle="tab">Gallery</a></li>
   </ul>
 
   <!-- Tab panes -->
   <div class="tab-content">
-    <div role="tabpanel" class="tab-pane" id="home">
+    <div role="tabpanel" class="tab-pane active" id="home">
 
 
   <!--<div class="row clearfix">-->
@@ -85,11 +85,10 @@
       <!--</div>-->
 
       <!--<div class="btn-group" role="group">-->
-        <button class="btn btn-success btn-l" id="saveButton">Save</button>
+        <button class="btn btn-success btn-l" id="saveButton">Download</button>
       <!--</div>-->
 
-      <input type="file" id="selectFile" title="Select File">
-      <button class="btn btn-success btn-l" id="loadFile">Load</button>
+      <input type="file" id="selectFile" title="Load File">
 
       <!--<span class="checkbox">-->
         <label class="checkbox-inline" id="snapToGridLabel"><input type="checkbox" value="" id="snapToGrid" checked>Snap to Grid</label>
@@ -143,7 +142,7 @@
 
 
 
-    <div role="tabpanel" class="tab-pane active" id="gallery">
+    <div role="tabpanel" class="tab-pane" id="gallery">
 
       <div class="row clearfix top-space">
 
