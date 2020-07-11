@@ -1043,6 +1043,7 @@ The full set of edit mode styles for nodes are:
             $('#snapToGridLabel').hide();
             $('#fileButton').hide();
             $('#saveButton').hide();
+            $('#calculator').hide();
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
@@ -1067,6 +1068,7 @@ The full set of edit mode styles for nodes are:
             $('#snapToGridLabel').show();
             $('#fileButton').show();
             $('#saveButton').show();
+            $('#calculator').show();
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();
