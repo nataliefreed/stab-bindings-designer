@@ -80,9 +80,9 @@ The full set of edit mode styles for nodes are:
  * other:   gray
 */
     const substyles = {
-        activeColor: '#FFB300',
+        activeColor: '#FFB400',
         hoveredColor: '#FFDB86',
-        thinLineWidth: 2,
+        thinLineWidth: 1,
         boldLineWidth: 4,
     };
 
@@ -120,13 +120,13 @@ The full set of edit mode styles for nodes are:
             })
             .selector('edge[!isEditMode][!isVisited][!isBackStitch]')
             .css({
-                'line-style': 'dashed',
+                'line-style': 'solid',
                 'width': substyles.thinLineWidth,
                 'line-color': 'black',
             })
             .selector('edge[!isEditMode][!isVisited][?isBackStitch]')
             .css({
-                'line-style': 'dotted',
+                'line-style': 'dashed',
                 'width': substyles.thinLineWidth,
                 'line-color': 'black',
             })
@@ -134,17 +134,19 @@ The full set of edit mode styles for nodes are:
             .css({
                 'line-style': 'solid',
                 'width': substyles.boldLineWidth,
-                'line-color': 'black',
+                'line-color': '#3355F3',
             })
             .selector('edge[!isEditMode][?isVisited][?isBackStitch]')
             .css({
-                'line-style': 'solid',
+                'line-style': 'dashed',
                 'width': substyles.boldLineWidth,
-                'line-color': 'gray',
+                'line-color': '#3355F3',
             })
             .selector('edge[!isEditMode][?isReachable]')
             .css({
                 'line-color': substyles.activeColor,
+                //'line-style': 'dashed',
+                'width': substyles.boldLineWidth,
             })
             // Mouseover, but only for unvisited nodes that might be next
             // Edges acting like they were interactive in animate mode was confusing
@@ -165,7 +167,7 @@ The full set of edit mode styles for nodes are:
             })
             .selector('node[?isReachable]')
             .css({
-                'background-color': '#ff0000',
+                'background-color': '#FF8300',
             })
             .selector('node:selected') //selected node in edit or animate mode
             .css({
@@ -178,7 +180,7 @@ The full set of edit mode styles for nodes are:
             })
             .selector('node[?isCurrentVisited]')
             .css({
-                'background-color': '#f43fc1'
+                'background-color': '#3355F3'
             }),
 
         zoomingEnabled: false,
