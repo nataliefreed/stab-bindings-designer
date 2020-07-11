@@ -147,13 +147,10 @@ The full set of edit mode styles for nodes are:
                 'line-color': substyles.activeColor,
             })
             // Mouseover, but only for unvisited nodes that might be next
-            // Edges acting like they were interactive in animate mode was confusing
-            // I'm not sure if having the edges be interactive or not is better
-            // Commenting this out for now, but I'll push a feature branch with interactive edges as well
-            // .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
-            // .css({
-            //     'line-color': substyles.hoveredColor,
-            // })
+            .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
+            .css({
+                'line-color': substyles.hoveredColor,
+            })
             .selector('node')
             .css({
                 'content': 'data(id)',
@@ -813,53 +810,72 @@ The full set of edit mode styles for nodes are:
                 }
             }
             //animate mode
-            else if (!editMode && evt.target.isNode()) {
-                var lastVisited = cy.data('lastVisited');
-                if (lastVisited != null) { //if we've already started
-                    var edgesBetween = findEdgesBetween(lastVisited, evt.target).filter('[!isVisited][?isReachable]');
-                    if (edgesBetween.length > 0) {
-                        lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
-                        edgesBetween[0].data("isVisited", true);
-                        evt.target.data("isVisited", true);
-                        cy.data('lastVisited', evt.target);
-                        evt.target.data("isCurrentVisited", true); //mark the current one (for styling)
-                        // Mark that we will switch to back/front stitches
-                        cy.data('nextStitchIsBackStitch', !cy.data('nextStitchIsBackStitch'));
+            else if (!editMode) {
+                if (evt.target.isNode()) {
+                    // Clicked on a specific node, go there
+                    visitNewNode(evt.target);
+                }
+                else if(evt.target.isEdge()) {
+                    // Clicked on an edge
+                    const lastNode = cy.data('lastVisited');
+
+                    const nextNode = oppositeNode(evt.target, lastNode);
+                    if(nextNode) {
+                        visitNewNode(nextNode);
                     }
                 }
-                else { //first one clicked
-                    evt.target.data("isVisited", true);
-                    cy.data('lastVisited', evt.target);
-                    evt.target.data("isCurrentVisited", true); //mark the current one (for styling)
-                }
-
-                cy.elements().data("isReachable", false);
-
-                // Update lastVisited in case it changed
-                lastVisited = cy.data('lastVisited');
-
-                var reachableEdges = getReachableEdgesFrom(cy.elements(), lastVisited);
-                reachableEdges.data("isReachable", true);
-
-                // Look at opposite end of each edge and mark the node as reachable
-                reachableEdges.forEach(function(ele, i, eles) {
-                    if(ele.source() === lastVisited) {
-                        ele.target().data("isReachable", true);
-                    }
-                    else if(ele.target() === lastVisited) {
-                        ele.source().data("isReachable", true);
-                    }
-                    else {
-                        // This shouldn't happen!
-                        console.warn("Found reachable edge that doesn't connect to lastVisited!");
-                    }
-                });
             }
         }});
 
+    // Switch to a new node in animate mode
+    // If new node isn't connected to currently visited node, will do nothing
+    var visitNewNode = function(selectedNode) {
+        var lastVisited = cy.data('lastVisited');
+        if (lastVisited != null) { //if we've already started
+            var edgesBetween = findEdgesBetween(lastVisited, selectedNode).filter('[!isVisited][?isReachable]');
+            if (edgesBetween.length > 0) {
+                lastVisited.data("isCurrentVisited", false); //no longer the current visited (for styling)
+                edgesBetween[0].data("isVisited", true);
+                selectedNode.data("isVisited", true);
+                cy.data('lastVisited', selectedNode);
+                selectedNode.data("isCurrentVisited", true); //mark the current one (for styling)
+                // Mark that we will switch to back/front stitches
+                cy.data('nextStitchIsBackStitch', !cy.data('nextStitchIsBackStitch'));
+            }
+        }
+        else { //first one clicked
+            selectedNode.data("isVisited", true);
+            cy.data('lastVisited', selectedNode);
+            selectedNode.data("isCurrentVisited", true); //mark the current one (for styling)
+        }
+
+        cy.elements().data("isReachable", false);
+
+        // Update lastVisited in case it changed
+        lastVisited = cy.data('lastVisited');
+
+        var reachableEdges = getReachableEdgesFrom(cy.elements(), lastVisited);
+        reachableEdges.data("isReachable", true);
+
+        // Look at opposite end of each edge and mark the node as reachable
+        reachableEdges.forEach(function(ele, i, eles) {
+            oppositeNode(ele, lastVisited).data("isReachable", true);
+        });
+    };
+
+    var oppositeNode = function(edge, node1) {
+        if(edge.source() === node1) {
+            return edge.target();
+        }
+        else if(edge.target() === node1) {
+            return edge.source();
+        }
+        return undefined;
+    }
+
     var findEdgesBetween = function(node1, node2) {
         return node1.edgesWith(node2);
-    }
+    };
 
     var getReachableEdgesFrom = function(graph, node) {
         var available = graph.filter('[!isVisited]');
