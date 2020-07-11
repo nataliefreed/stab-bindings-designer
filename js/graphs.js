@@ -147,10 +147,13 @@ The full set of edit mode styles for nodes are:
                 'line-color': substyles.activeColor,
             })
             // Mouseover, but only for unvisited nodes that might be next
-            .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
-            .css({
-                'line-color': substyles.hoveredColor,
-            })
+            // Edges acting like they were interactive in animate mode was confusing
+            // I'm not sure if having the edges be interactive or not is better
+            // Commenting this out for now, but I'll push a feature branch with interactive edges as well
+            // .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
+            // .css({
+            //     'line-color': substyles.hoveredColor,
+            // })
             .selector('node')
             .css({
                 'content': 'data(id)',
@@ -708,13 +711,13 @@ The full set of edit mode styles for nodes are:
     }
 
     cy.on('mouseover', function(evt) {
-        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+        if (evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
             evt.target.data("hovered", true);
         }
     });
 
     cy.on('mouseout', function(evt) {
-        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+        if (evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
             evt.target.data("hovered", false);
         }
     });
