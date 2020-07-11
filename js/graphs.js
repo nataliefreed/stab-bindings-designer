@@ -147,19 +147,25 @@ The full set of edit mode styles for nodes are:
                 'line-color': substyles.activeColor,
             })
             // Mouseover, but only for unvisited nodes that might be next
-            .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
-            .css({
-                'line-color': substyles.hoveredColor,
-            })
+            // Edges acting like they were interactive in animate mode was confusing
+            // I'm not sure if having the edges be interactive or not is better
+            // Commenting this out for now, but I'll push a feature branch with interactive edges as well
+            // .selector('edge[!isEditMode][?hovered][!isVisited][?isReachable]')
+            // .css({
+            //     'line-color': substyles.hoveredColor,
+            // })
             .selector('node')
             .css({
                 'content': 'data(id)',
                 'text-valign': 'center',
                 'color': 'white',
                 'background-color': '#888',
-                'shape': 'circle',
                 'width': 20,
-                'height': 20
+                'height': 20,
+            })
+            .selector('node[?isReachable]')
+            .css({
+                'background-color': '#ff0000',
             })
             .selector('node:selected') //selected node in edit or animate mode
             .css({
@@ -705,13 +711,13 @@ The full set of edit mode styles for nodes are:
     }
 
     cy.on('mouseover', function(evt) {
-        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+        if (evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
             evt.target.data("hovered", true);
         }
     });
 
     cy.on('mouseout', function(evt) {
-        if (editMode && evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
+        if (evt.target !== cy && (evt.target.isNode() || evt.target.isEdge())) {
             evt.target.data("hovered", false);
         }
     });
@@ -828,8 +834,26 @@ The full set of edit mode styles for nodes are:
                 }
 
                 cy.elements().data("isReachable", false);
-                var reachable = getReachableNodesFrom(cy.elements(), cy.data('lastVisited'));
-                reachable.data("isReachable", true);
+
+                // Update lastVisited in case it changed
+                lastVisited = cy.data('lastVisited');
+
+                var reachableEdges = getReachableEdgesFrom(cy.elements(), lastVisited);
+                reachableEdges.data("isReachable", true);
+
+                // Look at opposite end of each edge and mark the node as reachable
+                reachableEdges.forEach(function(ele, i, eles) {
+                    if(ele.source() === lastVisited) {
+                        ele.target().data("isReachable", true);
+                    }
+                    else if(ele.target() === lastVisited) {
+                        ele.source().data("isReachable", true);
+                    }
+                    else {
+                        // This shouldn't happen!
+                        console.warn("Found reachable edge that doesn't connect to lastVisited!");
+                    }
+                });
             }
         }});
 
@@ -837,7 +861,7 @@ The full set of edit mode styles for nodes are:
         return node1.edgesWith(node2);
     }
 
-    var getReachableNodesFrom = function(graph, node) {
+    var getReachableEdgesFrom = function(graph, node) {
         var available = graph.filter('[!isVisited]');
         if(node == null) {
             return available;
@@ -857,9 +881,11 @@ The full set of edit mode styles for nodes are:
                 candidates = adjacent;
             }
             const nextStitchIsBackStitch = cy.data("nextStitchIsBackStitch");
-            return candidates.filter(function(ele, i, eles) {
+            candidates = candidates.filter(function(ele, i, eles) {
                         return ele.data("isBackStitch") == nextStitchIsBackStitch;
             });
+
+            return candidates;
         }
     };
 
