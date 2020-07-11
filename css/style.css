@@ -57,3 +57,54 @@ body {
     /*color: #ffffff;*/
     margin-left:20px;
 }
+
+.info-box {
+    width: fit-content;
+    border-radius: 2px;
+    margin: 10px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: inherit;
+}
+
+.instructions {
+    background-color:#9AD1E0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.legend {
+    border-color:#9AD1E0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.computed {
+    margin-left: 30px;
+    padding-top: 10px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+    color: #022A35;
+    font-size: 20px;
+}
+
+#calculator {
+    background-color:white;
+    width: 900px;
+    padding: 10px;
+}
+
+input[type=number] {
+    text-align:right;
+    width: 80px;
+    font-weight: normal;
+}
+
+label {
+    font-weight: normal;
+}

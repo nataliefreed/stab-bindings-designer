@@ -316,7 +316,7 @@ The full set of edit mode styles for nodes are:
             }
         });
 
-        degreeText.text("number of vertices of odd degree (with an odd number of stitch connections): " + numOddVertices);
+        degreeText.text("number of vertices of odd degree: " + numOddVertices);
 
         if(numOddVertices === 0 && fullyConnected && graph.nodes().length > 0) {
             displayText.text("Euler circuit! Start stitching from any hole");
@@ -351,13 +351,34 @@ The full set of edit mode styles for nodes are:
 
         var numHoleStitches = graph.edges().length;
 
-        var displayText = $('#totalLength');
+        var displayText = $('#calculator');
 
         var spine_length = $('#cy').width();
         totalEdgeLength /= spine_length;
 
-        displayText.text('Total length of thread needed for all edges: ' + totalEdgeLength.toFixed(2) + ' * spine length + ' + numHoleStitches + ' * book thickness + a little more for needle');
+        var user_spine = $('#spine-length').val();
+        var user_book_thickness = $("#book-thickness").val();
+
+        if(editMode) {
+            $('#spine-length-multiplier').text((2.0 * totalEdgeLength + 1).toFixed(2));
+            $('#hole-thread-multiplier').text(2.0 * numHoleStitches);
+            $('#total-length').text((2.0 * totalEdgeLength * user_spine + 2.0 * numHoleStitches * user_book_thickness).toFixed(2));
+            //displayText.text('Total length of thread needed: ' + 2 * totalEdgeLength.toFixed(2) + ' * spine length + ' + 2 * numHoleStitches + ' * book thickness + a little more for needle');
+        }
+        else {
+            $('#spine-length-multiplier').text((totalEdgeLength + 1).toFixed(2));
+            $('#hole-thread-multiplier').text(numHoleStitches);
+            $('#total-length').text((totalEdgeLength * user_spine + numHoleStitches * user_book_thickness).toFixed(2));
+            //displayText.text('Total length of thread needed: ' + totalEdgeLength.toFixed(2) + ' * spine length + ' + numHoleStitches + ' * book thickness + a little more for needle');
+        }
     }
+
+    $('#book-thickness').focusout(function() {
+        updateTotalLength(cy.elements());
+    });
+    $('#spine-length').focusout(function() {
+        updateTotalLength(cy.elements());
+    });
 
     var unselectAll = function() {
         var selected = cy.$(':selected');
@@ -891,15 +912,20 @@ The full set of edit mode styles for nodes are:
 
     $(document).keydown(function(e) {
         //console.log("key: " + e.keyCode);
-        if(editMode) {
-            if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
-                e.preventDefault();
-                deleteSelected();
+        if($('input:focus').length == 0) { //if we're not typing in an input box
+            if (editMode) {
+                if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
+                    e.preventDefault();
+                    deleteSelected();
+                }
+                else if (e.keyCode === 32) { //spacebar
+                    e.preventDefault();
+                    unselectAll();
+                }
             }
-            else if (e.keyCode === 32) { //spacebar
-                e.preventDefault();
-                unselectAll();
-            }
+        }
+        else {
+
         }
     });
 
@@ -1010,8 +1036,9 @@ The full set of edit mode styles for nodes are:
             $('#undoButton').hide();
             //$('#saveButton').hide();
             $('#drawing-instructions').hide();
+            $('#animate-instructions').show();
             $('#toggleModeButton').text("Switch to Edit Mode");
-            $('#totalLength').show(); // Only show in animate mode because value in edit mode doesn't reflect needed amount of string
+            $('#snapToGridLabel').hide();
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
@@ -1031,8 +1058,9 @@ The full set of edit mode styles for nodes are:
             $('#undoButton').show();
             //$('#saveButton').show();
             $('#drawing-instructions').show();
+            $('#animate-instructions').hide();
             $('#toggleModeButton').text("Switch to Animate Mode");
-            $('#totalLength').hide();
+            $('#snapToGridLabel').show();
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();

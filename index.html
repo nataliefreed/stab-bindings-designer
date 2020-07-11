@@ -60,8 +60,7 @@
       </div>
     </div>
   </div>
-
-    <div class="row clearfix top-space">
+     <div class="row clearfix top-space">
     <div class="col-md-10 column">
     <!--<div class="btn-toolbar">-->
 
@@ -98,19 +97,46 @@
 
     </div>
 
+      <div class="row clearfix top-space">
+        <div class="col-md-5 column top-space info-box" id="calculator">
+            <span>Total length of thread needed: </span>
+          <strong><span id="spine-length-multiplier"></span></strong>
+          <span> * </span>
+            <label>spine length
+            <input type="number" id="spine-length" value="7" name="spine-length"/>
+            </label>
+            <span> + </span>
+          <strong><span id="hole-thread-multiplier"></span></strong>
+            <span> * </span>
+          <label>book-thickness
+            <input type="number" id="book-thickness" value="0.25" name="book-thickness" />
+           </label>
+            <span> = </span>
+            <strong><span id="total-length"></span></strong>
+        </div>
+
+      </div>
+
   <div class="row clearfix top-space">
-    <div class="col-md-5 column">
-      <h3 id="connectedStatus">not fully connected</h3>
-      <h3 id="degreeInfo">Number of vertices of odd degree:</h3>
-      <h3 id="circuitStatus">no Euler path or circuit</h3>
-      <h3 id="totalLength" hidden="true">Total length of all edges:</h3>
+    <div class="col-md-5 column top-space info-box instructions" id="drawing-instructions">
+      <h4>Instructions</h4>
+      <ul>
+      <li>Click to add a hole</li>
+      <li>Click on an existing hole or stitch to select it</li>
+      <li>Select one hole, then another to connect them with a stitch</li>
+      <li>The delete key or the delete button will remove a selected hole or stitch</li>
+      <li>The spacebar deselects any selected hole or stitch</li>
+      </ul>
     </div>
-    <div class="col-md-7 column top-space" id="drawing-instructions">
-      <p>Click to add a hole</p>
-      <p>Click on an existing hole or stitch to select it</p>
-      <p>Select one hole, then another to connect them with a stitch</p>
-      <p>The delete key or the delete button will remove a selected hole or stitch</p>
-      <p>The spacebar deselects any selected hole or stitch</p>
+    <div class="col-md-5 column top-space info-box instructions" id="animate-instructions" hidden>
+      <h4>Instructions</h4>
+
+    </div>
+    <div class="col-md-6 column computed">
+      <p class="computed" id="connectedStatus">not fully connected</p>
+      <p class="computed" id="degreeInfo">Number of vertices of odd degree:</p>
+      <p class="computed" id="circuitStatus">no Euler path or circuit</p>
+      <p class="computed" id="totalLength" hidden="true">Total length of all edges:</p>
     </div>
   </div>
 
