@@ -126,7 +126,7 @@ The full set of edit mode styles for nodes are:
             })
             .selector('edge[!isEditMode][!isVisited][?isBackStitch]')
             .css({
-                'line-style': 'dotted',
+                'line-style': 'dashed',
                 'width': substyles.thinLineWidth,
                 'line-color': 'black',
             })
@@ -138,7 +138,7 @@ The full set of edit mode styles for nodes are:
             })
             .selector('edge[!isEditMode][?isVisited][?isBackStitch]')
             .css({
-                'line-style': 'dotted',
+                'line-style': 'dashed',
                 'width': substyles.boldLineWidth,
                 'line-color': '#3355F3',
             })
