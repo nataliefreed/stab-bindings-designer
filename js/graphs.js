@@ -1039,6 +1039,8 @@ The full set of edit mode styles for nodes are:
             $('#animate-instructions').show();
             $('#toggleModeButton').text("Switch to Edit Mode");
             $('#snapToGridLabel').hide();
+            $('#fileButton').hide();
+            $('#saveButton').hide();
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
@@ -1061,6 +1063,8 @@ The full set of edit mode styles for nodes are:
             $('#animate-instructions').hide();
             $('#toggleModeButton').text("Switch to Animate Mode");
             $('#snapToGridLabel').show();
+            $('#fileButton').show();
+            $('#saveButton').show();
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();
