@@ -1029,7 +1029,7 @@ The full set of edit mode styles for nodes are:
 
     $('#toggleModeButton').click( function() {
         var text = $('#toggleModeButton').text();
-        if(text === "Switch to Animate Mode") { //go to animate mode
+        if(text === "Stitch My Design") { //go to animate mode
             editMode = false;
             $('#deleteButton').hide();
             $('#clearAllButton').hide();
@@ -1039,7 +1039,7 @@ The full set of edit mode styles for nodes are:
             //$('#saveButton').hide();
             $('#drawing-instructions').hide();
             $('#animate-instructions').show();
-            $('#toggleModeButton').text("Switch to Edit Mode");
+            $('#toggleModeButton').text("Edit Design");
             $('#snapToGridLabel').hide();
             $('#fileButton').hide();
             $('#saveButton').hide();
@@ -1064,7 +1064,7 @@ The full set of edit mode styles for nodes are:
             //$('#saveButton').show();
             $('#drawing-instructions').show();
             $('#animate-instructions').hide();
-            $('#toggleModeButton').text("Switch to Animate Mode");
+            $('#toggleModeButton').text("Stitch My Design");
             $('#snapToGridLabel').show();
             $('#fileButton').show();
             $('#saveButton').show();
