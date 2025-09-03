@@ -12,8 +12,50 @@ $(function(){ // on dom ready
     $('#resetButton').hide();
 
     $(window).bind('beforeunload', function () {
-        return 'Your design is not saved!';
-    });
+
+    // --- Persistence (autosave/restore) ---
+    const LOCAL_STORAGE_KEY = 'stabDesignerMinimalGraphV1';
+    var autosaveTimeoutId = null;
+
+    var exportMinimalGraph = function() {
+        var indices = {};
+        var minimalNodes = [];
+        cy.nodes().forEach(function(ele, i, eles) {
+            indices[ele.id()] = minimalNodes.length;
+            minimalNodes.push([ele.position('x'), ele.position('y')]);
+        });
+        var minimalEdges = [];
+        cy.edges().forEach(function(ele, i, eles) {
+            minimalEdges.push([indices[ele.source().id()], indices[ele.target().id()]]);
+        });
+        return [minimalNodes, minimalEdges];
+    };
+
+    var importMinimalGraph = function(minimalGraph) {
+        var newNodes = [];
+        var pushNode = function(x,y) {
+            newNodes.push(addNode(x, y));
+        };
+        minimalGraph[0].forEach(function(xy) { pushNode(xy[0], xy[1]); });
+        minimalGraph[1].forEach(function(src_dst) {
+            addEdge(newNodes[src_dst[0]], newNodes[src_dst[1]]).data("isVisited", true);
+        });
+    };
+
+    var scheduleAutosave = function() {
+        if (autosaveTimeoutId) {
+            clearTimeout(autosaveTimeoutId);
+        }
+        autosaveTimeoutId = setTimeout(function() {
+            try {
+                var minimal = exportMinimalGraph();
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(minimal));
+            } catch (e) {
+                // ignore storage errors (quota, etc.)
+                console.warn('Autosave failed:', e);
+            }
+        }, 400); // debounce saves
+    };
 
     $("#book-width").val($('#cy').width()/96);
     $("#book-height").val($('#cy').height()/96);
@@ -759,6 +801,7 @@ The full set of edit mode styles for nodes are:
             }
         }
         updateTotalLength(cy.elements());
+        scheduleAutosave();
     });
 
     var calcSnapLoc = function(val, numCols) {
@@ -791,6 +834,7 @@ The full set of edit mode styles for nodes are:
         }
 
         updateTotalLength(cy.elements());
+        scheduleAutosave();
     });
 
 
@@ -942,22 +986,7 @@ The full set of edit mode styles for nodes are:
     $('#saveButton').click( function() {
         var save = document.createElement('a');
         save.download = "graph.json";
-        //console.log(cy.elements().jsons());
-
-        var indices = {};
-        var minimalNodes = [];
-
-        cy.nodes().forEach(function(ele, i, eles) {
-            indices[ele.id()] = minimalNodes.length;
-            minimalNodes.push([ele.position('x'), ele.position('y')]);
-        });
-
-        var minimalEdges = [];
-        cy.edges().forEach(function(ele, i, eles) {
-            minimalEdges.push([indices[ele.source().id()], indices[ele.target().id()]]);
-        });
-
-        var minimalGraph = [minimalNodes, minimalEdges];
+        var minimalGraph = exportMinimalGraph();
 
         // nodes: [[x,y]]
         // edges: [[n0, n1]]
@@ -980,16 +1009,8 @@ The full set of edit mode styles for nodes are:
         fileReader.onload = function(fileLoadedEvent) {
             var rawText = fileLoadedEvent.target.result;
             var minimalGraph = JSON.parse(rawText);
-            var newNodes = [];
-            var pushNode = function(x,y) {
-                newNodes.push(addNode(x, y));
-            }
-            minimalGraph[0].forEach(function(xy) {
-                pushNode(xy[0], xy[1]);
-            })
-            minimalGraph[1].forEach(function(src_dst) {
-                addEdge(newNodes[src_dst[0]], newNodes[src_dst[1]]).data("isVisited", true);
-            })
+            importMinimalGraph(minimalGraph);
+            try { localStorage.setItem(LOCAL_STORAGE_KEY, rawText); } catch(e) {}
         };
         fileReader.readAsText(fileToLoad, "UTF-8");
 
@@ -1004,6 +1025,7 @@ The full set of edit mode styles for nodes are:
     $('#clearAllButton').click( function() {
         if(confirm("Are you sure?")) {
             clearAll();
+            try { localStorage.removeItem(LOCAL_STORAGE_KEY); } catch(e) {}
         }
         this.blur();
     });
@@ -1154,6 +1176,21 @@ The full set of edit mode styles for nodes are:
     //
     //addEdge(initNodes[12], initNodes[1]);
     //addEdge(initNodes[20], initNodes[11]);
+
+    // If a saved design exists, restore it instead of the demo graph
+    (function restoreIfSaved(){
+        try {
+            var raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if(raw) {
+                // Remove the demo nodes/edges drawn above and restore saved
+                cy.elements().remove();
+                var minimal = JSON.parse(raw);
+                importMinimalGraph(minimal);
+            }
+        } catch(e) {
+            // ignore malformed storage
+        }
+    })();
 
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
