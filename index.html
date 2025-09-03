@@ -44,157 +44,118 @@
   <div class="tab-content">
     <div role="tabpanel" class="tab-pane active" id="home">
 
-
-  <!--<div class="row clearfix">-->
-    <!--<div class="col-md-12 column">-->
-      <!--<h1>-->
-        <!--Stab Bindings Designer-->
-      <!--</h1>-->
-    <!--</div>-->
+<!--<div class="row clearfix">-->
+  <!--<div class="col-md-12 column">-->
+    <!--<h1>-->
+      <!--Stab Bindings Designer-->
+    <!--</h1>-->
   <!--</div>-->
+<!--</div>-->
 
-  <div class="row row-fluid clearfix top-space" id="cyarea">
-    <div class="col-md-10 column">
-      <div id="cy">
-        <canvas id="grid-canvas" width="900" height="225"></canvas>
-      </div>
+<div class="row row-fluid clearfix top-space" id="cyarea">
+  <div class="col-md-10 column">
+    <div id="cy">
+      <canvas id="grid-canvas" width="900" height="225"></canvas>
     </div>
   </div>
-     <div class="row clearfix top-space">
-    <div class="col-md-10 column">
-    <!--<div class="btn-toolbar">-->
+</div>
+   <div class="row clearfix top-space">
+  <div class="col-md-10 column">
+  <!--<div class="btn-toolbar">-->
 
-      <!--<div class="btn-group" role="group">-->
+    <!--<div class="btn-group" role="group">-->
 
-      <!--</div>-->
-
-      <button class="btn btn-primary btn-l" id="toggleModeButton">Switch to Animate Mode</button>
-
-      <button class="btn btn-default btn-l" id="deleteButton">Delete</button>
-      <button class="btn btn-default btn-l" id="undoButton">Undo delete</button>
-      <button class="btn btn-default btn-l" id="clearAllButton">Clear All</button>
-      <button class="btn btn-default btn-l" id="resetButton">Reset</button>
-
-      <!--<div class="btn-group" role="group">-->
-        <!--<button class="btn btn-default btn-l" id="backStitchButton">Add back stitches</button>-->
-      <!--</div>-->
-
-      <!--<div class="btn-group" role="group">-->
-        <!--<button class="btn btn-success btn-l" id="downloadButton">Print</button>-->
-      <!--</div>-->
-
-      <!--<div class="btn-group" role="group">-->
-        <button class="btn btn-success btn-l" id="saveButton">Save</button>
-      <!--</div>-->
-
-      <span id="fileButton"><input type="file" id="selectFile" title="Upload File"></input></span>
-      <!--<span class="checkbox">-->
-        <label class="checkbox-inline" id="snapToGridLabel"><input type="checkbox" value="" id="snapToGrid" checked>Snap to Grid</label>
-      <!--</span>-->
-
-    </div>
-
-    </div>
-
-      <div class="row clearfix top-space">
-        <div class="col-md-5 column top-space info-box" id="calculator">
-            <span>Total length of thread needed: </span>
-          <strong><span id="spine-length-multiplier"></span></strong>
-          <span> * </span>
-            <label>spine length
-            <input type="number" id="spine-length" value="7" name="spine-length"/>
-            </label>
-            <span> + </span>
-          <strong><span id="hole-thread-multiplier"></span></strong>
-            <span> * </span>
-          <label>book thickness
-            <input type="number" id="book-thickness" value="0.25" name="book-thickness" />
-           </label>
-            <span> = </span>
-            <strong><span id="total-length"></span></strong>
-        </div>
-
-      </div>
-
-  <div class="row clearfix top-space">
-    <div class="col-md-5 column top-space info-box instructions" id="drawing-instructions">
-      <h4>Instructions</h4>
-      <ul>
-      <li>Click to add a hole</li>
-      <li>Click on an existing hole or stitch to select it</li>
-      <li>Select one hole, then another to connect them with a stitch</li>
-      <li>The delete key or the delete button will remove a selected hole or stitch</li>
-      <li>The spacebar deselects any selected hole or stitch</li>
-      </ul>
-    </div>
-    <div class="col-md-5 column top-space info-box instructions" id="animate-instructions" hidden>
-      <h4>Instructions</h4>
-      <p>Click on any hole to begin stitching from there.</p>
-      <p>You will have options along the way!</p>
-      <img src="images/legend for stitches.png" alt="stitch legend" style="width:300px;">
-
-    </div>
-    <div class="col-md-6 column computed">
-      <p class="computed" id="connectedStatus">not fully connected</p>
-      <p class="computed" id="degreeInfo">Number of vertices of odd degree:</p>
-      <p class="computed" id="circuitStatus">no Euler path or circuit</p>
-      <p class="computed" id="totalLength" hidden="true">Total length of all edges:</p>
-    </div>
-  </div>
-
-  <!--<div class="row clearfix">-->
-    <!--<div class="col-md-5 column">-->
-      <!--<input type="text" class="form-control" id="book-width">Book width in inches</input>-->
-      <!--<input type="text" class="form-control" id="book-height">Book height in inches</input>-->
     <!--</div>-->
+
+    <button class="btn btn-primary btn-l" id="toggleModeButton">Stitch My Design</button>
+
+    <button class="btn btn-default btn-l" id="deleteButton">Delete</button>
+    <button class="btn btn-default btn-l" id="undoButton">Undo delete</button>
+    <button class="btn btn-default btn-l" id="clearAllButton">Clear All</button>
+    <button class="btn btn-default btn-l" id="resetButton">Reset</button>
+
+    <!--<div class="btn-group" role="group">-->
+      <!--<button class="btn btn-default btn-l" id="backStitchButton">Add back stitches</button>-->
+    <!--</div>-->
+
+    <!--<div class="btn-group" role="group">-->
+      <!--<button class="btn btn-success btn-l" id="downloadButton">Print</button>-->
+    <!--</div>-->
+
+    <!--<div class="btn-group" role="group">-->
+      <button class="btn btn-success btn-l" id="saveButton">Save</button>
+    <!--</div>-->
+
+    <span id="fileButton"><input type="file" id="selectFile" title="Upload File"></input></span>
+    <!--<span class="checkbox">-->
+      <label class="checkbox-inline" id="snapToGridLabel"><input type="checkbox" value="" id="snapToGrid" checked>Snap to Grid</label>
+    <!--</span>-->
+
+  </div>
+
+  </div>
+
+    <div class="row clearfix top-space">
+      <div class="col-md-5 column top-space info-box" id="calculator">
+          <span>Total length of thread needed: </span>
+        <strong><span id="spine-length-multiplier"></span></strong>
+        <span> * </span>
+          <label>spine length
+          <input type="number" id="spine-length" value="7" name="spine-length"/>
+          </label>
+          <span> + </span>
+        <strong><span id="hole-thread-multiplier"></span></strong>
+          <span> * </span>
+        <label>book thickness
+          <input type="number" id="book-thickness" value="0.25" name="book-thickness" />
+         </label>
+          <span> = </span>
+          <strong><span id="total-length"></span></strong>
+      </div>
+
+    </div>
+
+<div class="row clearfix top-space">
+  <div class="col-md-5 column top-space info-box instructions" id="drawing-instructions">
+    <h4>Instructions</h4>
+    <ul>
+    <li>Click to add a hole</li>
+    <li>Click on an existing hole or stitch to select it</li>
+    <li>Select one hole, then another to connect them with a stitch</li>
+    <li>The delete key or the delete button will remove a selected hole or stitch</li>
+    <li>The spacebar deselects any selected hole or stitch</li>
+    </ul>
+  </div>
+  <div class="col-md-5 column top-space info-box instructions" id="animate-instructions" hidden>
+    <h4>Instructions</h4>
+    <p>Click on any hole to begin stitching from there.</p>
+    <p>You will have options along the way!</p>
+    <img src="images/legend for stitches.png" alt="stitch legend" style="width:300px;">
+
+  </div>
+  <div class="col-md-6 column computed">
+    <p class="computed" id="connectedStatus">not fully connected</p>
+    <p class="computed" id="degreeInfo">Number of vertices of odd degree:</p>
+    <p class="computed" id="circuitStatus">no Euler path or circuit</p>
+    <p class="computed" id="totalLength" hidden="true">Total length of all edges:</p>
+  </div>
+</div>
+
+<!--<div class="row clearfix">-->
+  <!--<div class="col-md-5 column">-->
+    <!--<input type="text" class="form-control" id="book-width">Book width in inches</input>-->
+    <!--<input type="text" class="form-control" id="book-height">Book height in inches</input>-->
+  <!--</div>-->
 <!--</div>-->
 
     </div>
 
-
     <div role="tabpanel" class="tab-pane" id="about">
-      <div class="row clearfix top-space">
-        <div class="col-md-6 column">
-
-          <p>This app helps you create custom stab bound book patterns (while exploring graph theory math!)</p>
-          <p>Asian Stab Binding is an elegant bookbinding technique originally developed in China, later spreading to Japan and Korea.</p>
-          <p>This exploration is by <a href="http://nataliefreed.com">Natalie Freed</a> and <a href="http://www.beccarose.co.uk/">Becca Rose Glowacki</a>.</p>
-          <p>More documentation coming soon! In the meantime, check out Becca's GIF and Natalie's book below for more information.</p>
-          <!--<p>If you would like to use this as a classroom activity, you might be interested in <a href="https://docs.google.com/document/d/1ydlVRKQho79ZRlAMhy-iPRHxQ0SPHhd16VXdFKSpMqg/">this guide</a> we developed for a workshop at the Exploratorium in collaboration with Paula Hooper, or this blog post... </p>-->
-
-          <img src="images/bg stab binding animation.gif" alt="Becca Glowacki Stab Binding Animation" style="width:100%;">
-          <object data="images/edgesbook.pdf" width="700" height="700" type='application/pdf'></object>
-        </div>
-      </div>
+      <!-- Loaded from tabs/about.html at runtime -->
     </div>
 
-
-
     <div role="tabpanel" class="tab-pane" id="gallery">
-
-      <div class="row clearfix top-space">
-
-        <div class="col-md-12 column">
-          <p>Hover mouse over image for more information about each book.</p>
-          <p>Click on The App to make your own!</p>
-        </div>
-
-        <div class="col-md-6 column">
-          <span title="Rainy Day and Geometric Books Natalie Freed"><img class="top-space" src="images/gallery/nf rainy day book and geometric book.jpg" alt="Natalie Freed Rainy Day Book and Geometric Book" style="width:100%;"></span>
-          <span title="Meme Animal Books Becca Glowacki"><img class="top-space" src="images/gallery/becca meme books.jpg" alt="Becca Glowacki Meme Animal Books" style="width:100%;"></span>
-          <span title="Diamond and DNA Patterns Natalie Freed"><img class="top-space" src="images/gallery/nf diamonds and dna.jpg" alt="NF Diamonds and DNA" style="width:100%;"></span>
-          <span title="House and Square Patterns Natalie Freed"><img class="top-space" src="images/gallery/nf houses and squares.jpg" alt="NF Houses and Squares" style="width:100%;"></span>
-        </div>
-
-        <div class="col-md-6 column">
-          <span title="Stab Book Examples Natalie Freed"><img class="top-space" src="images/gallery/nf%20hello%20world%20and%20other%20stab%20books.jpeg" alt="NF Hello World and Others" style="width:100%;"></span>
-          <span title="Snail Book Nicole Catrett"><img class="top-space" src="images/gallery/nicole%20snailbinding2.jpg" alt="Nicole Catrett Snail Book" style="width:100%;"></span>
-          <span title="Multicolor Designs Exploratorium XTech"><img class="top-space" src="images/gallery/xtech%20designs%20multicolor.JPG" alt="Exploratorium XTech Designs Multicolor" style="width:100%;"></span>
-          <span title="Stab Book Designs with Templates Exploratorium XTech"><img class="top-space" src="images/gallery/xtech%20designs%20with%20templates.JPG" alt="Exploratorium XTech Designs with Templates" style="width:100%;"></span>
-          <!--<img class="top-space" src="images/gallery/xtech%20designs%20practice%20stars.JPG" alt="Exploratorium XTech Designs Practice Stars" style="width:100%;">-->
-        </div>
-
-      </div>
+      <!-- Loaded from tabs/gallery.html at runtime -->
     </div>
 
   </div>
@@ -202,5 +163,14 @@
 
 </div>
 
+<script>
+// Load static tab contents once on page load so tabs/about.html and tabs/gallery.html
+// are the single source of truth for their markup.
+// Requires jQuery (already included above).
+$(function() {
+  $('#about').load('tabs/about.html');
+  $('#gallery').load('tabs/gallery.html');
+});
+</script>
 </body>
 </html>
