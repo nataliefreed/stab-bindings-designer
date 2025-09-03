@@ -11,7 +11,6 @@ $(function(){ // on dom ready
 
     $('#resetButton').hide();
 
-    $(window).bind('beforeunload', function () {
 
     // --- Persistence (autosave/restore) ---
     const LOCAL_STORAGE_KEY = 'stabDesignerMinimalGraphV1';
@@ -1182,13 +1181,24 @@ The full set of edit mode styles for nodes are:
         try {
             var raw = localStorage.getItem(LOCAL_STORAGE_KEY);
             if(raw) {
-                // Remove the demo nodes/edges drawn above and restore saved
-                cy.elements().remove();
                 var minimal = JSON.parse(raw);
-                importMinimalGraph(minimal);
+                // Only restore if we have valid data with nodes and edges
+                if(minimal && Array.isArray(minimal) && minimal.length >= 2 && 
+                   Array.isArray(minimal[0]) && minimal[0].length > 0) {
+                    // Remove the demo nodes/edges drawn above and restore saved
+                    cy.elements().remove();
+                    importMinimalGraph(minimal);
+                    console.log('Restored saved design with', minimal[0].length, 'nodes');
+                } else {
+                    // Invalid data, clear it
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    console.log('Cleared invalid saved data, keeping demo graph');
+                }
             }
         } catch(e) {
-            // ignore malformed storage
+            // ignore malformed storage - keep the demo graph and clear bad data
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            console.warn('Failed to restore saved design, cleared bad data, keeping demo:', e);
         }
     })();
 
