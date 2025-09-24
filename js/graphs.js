@@ -1065,6 +1065,8 @@ The full set of edit mode styles for nodes are:
             $('#fileButton').hide();
             $('#saveButton').hide();
             $('#calculator').hide();
+            // $('#prevStepButton').show();
+            // $('#nextStepButton').show();
             unselectAll();
             cy.autolock(true);
             cy.autounselectify(true);
@@ -1090,6 +1092,8 @@ The full set of edit mode styles for nodes are:
             $('#fileButton').show();
             $('#saveButton').show();
             $('#calculator').show();
+            // $('#prevStepButton').hide();
+            // $('#nextStepButton').hide();
             cy.autolock(false);
             cy.autounselectify(false);
             resetCircuit();
