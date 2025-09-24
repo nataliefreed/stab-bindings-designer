@@ -70,8 +70,8 @@
     <button class="btn btn-primary btn-l" id="toggleModeButton">Stitch My Design</button>
     
     <!-- Navigation buttons for animate mode (initially hidden) -->
-    <button class="btn btn-default btn-l" id="prevStepButton" style="display: none;">← Previous</button>
-    <button class="btn btn-default btn-l" id="nextStepButton" style="display: none;">Next →</button>
+    <!-- <button class="btn btn-default btn-l" id="prevStepButton" style="display: none;">← Previous</button>
+    <button class="btn btn-default btn-l" id="nextStepButton" style="display: none;">Next →</button> -->
 
     <button class="btn btn-default btn-l" id="deleteButton">Delete</button>
     <button class="btn btn-default btn-l" id="undoButton">Undo delete</button>
@@ -125,15 +125,17 @@
     <ul>
     <li>Click to add a hole</li>
     <li>Click on an existing hole or stitch to select it</li>
+    <li>Shift + click or drag a box to select multiple</li>
     <li>Select one hole, then another to connect them with a stitch</li>
-    <li>The delete key or the delete button will remove a selected hole or stitch</li>
-    <li>The spacebar deselects any selected hole or stitch</li>
+    <li>delete: remove a selected hole or stitch</li>
+    <li>spacebar: deselect</li>
+    <li>d: duplicate selection</li>
     </ul>
   </div>
   <div class="col-md-5 column top-space info-box instructions" id="animate-instructions" hidden>
     <h4>Instructions</h4>
     <p>Click on any hole to begin stitching from there.</p>
-    <p>You will have options along the way!</p>
+    <p>Choose your adventure: you will have options along the way!</p>
     <img src="images/legend for stitches.png" alt="stitch legend" style="width:300px;">
 
   </div>

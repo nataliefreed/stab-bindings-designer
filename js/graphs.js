@@ -228,8 +228,8 @@ The full set of edit mode styles for nodes are:
         userZoomingEnabled: false,
         panningEnabled: false,
         userPanningEnabled: false,
-        boxSelectionEnabled: false,
-        selectionType: 'single',
+        boxSelectionEnabled: true,
+        selectionType: 'additive',
 
         elements: {
             nodes: [ ],
@@ -956,23 +956,110 @@ The full set of edit mode styles for nodes are:
     };
 
     $(document).keydown(function(e) {
-        //console.log("key: " + e.keyCode);
-        if($('input:focus').length == 0) { //if we're not typing in an input box
-            if (editMode) {
-                if (e.keyCode === 46 || e.keyCode === 8) { //delete or backspace
-                    e.preventDefault();
-                    deleteSelected();
+        // If user is typing in an input, ignore shortcuts
+        if ($('input:focus').length !== 0) return;
+    
+        if (editMode) {
+            const isMeta = e.ctrlKey || e.metaKey; // Ctrl on Win/Linux, Cmd on macOS
+    
+            // Delete / Backspace -> delete selection
+            if (e.keyCode === 46 || e.keyCode === 8) {
+                e.preventDefault();
+                deleteSelected();
+                return;
+            }
+    
+            // Space -> unselect all
+            if (e.keyCode === 32) {
+                e.preventDefault();
+                unselectAll();
+                return;
+            }
+    
+            // Cmd/Ctrl + D -> duplicate selection with a small offset
+            if (e.key === 'd' || e.keyCode === 68) {
+                e.preventDefault();
+                if (typeof duplicateSelection === 'function') {
+                    duplicateSelection(20, 20);
+                } else {
+                    console.warn('duplicateSelection(offsetX, offsetY) is not defined.');
                 }
-                else if (e.keyCode === 32) { //spacebar
-                    e.preventDefault();
-                    unselectAll();
-                }
+                return;
             }
         }
-        else {
-
-        }
     });
+    
+
+    
+
+    // Duplicate currently selected nodes (and edges between them) with an offset
+    function duplicateSelection(offsetX = 20, offsetY = 20) {
+        if (!editMode) return;
+    
+        const selNodes = cy.nodes(':selected');
+        if (selNodes.empty()) return;
+    
+        // Edges to copy: any edge whose both endpoints are in the selection
+        const selEdgesInternal = selNodes.connectedEdges().filter(e =>
+        selNodes.contains(e.source()) && selNodes.contains(e.target())
+        );
+    
+        const old2new = {};
+        let added = cy.collection();
+    
+        cy.batch(() => {
+        // 1) add duplicated nodes
+        selNodes.forEach(n => {
+            const p = n.position();
+            const nn = cy.add({
+            group: 'nodes',
+            data: { /* carry over fields if needed */ },
+            position: { x: p.x + offsetX, y: p.y + offsetY }
+            });
+            old2new[n.id()] = nn.id();
+            added = added.add(nn);
+        });
+    
+        // 2) add duplicated internal edges (respect your no-parallel rule)
+        selEdgesInternal.forEach(e => {
+            const srcNewId = old2new[e.source().id()];
+            const tgtNewId = old2new[e.target().id()];
+            if (!srcNewId || !tgtNewId) return;
+    
+            const srcNew = cy.getElementById(srcNewId);
+            const tgtNew = cy.getElementById(tgtNewId);
+    
+            // avoid parallel edges between the new pair
+            if (srcNew.edgesWith(tgtNew).length < 1) {
+            const ne = addEdge(srcNew, tgtNew); // your helper sets isEditMode flag
+            ne.data('isVisited', true);         // match your edit-mode default look
+            added = added.add(ne);
+            }
+        });
+    
+        // Select the new nodes so users can keep moving them
+        cy.$(':selected').unselect();
+        added.filter('node').select();
+        });
+    
+        // Snap the new nodes if snap-to-grid is on
+        if (snapToGrid) {
+        cy.batch(() => {
+            added.filter('node').forEach(n => {
+            const closestX = calcSnapLoc(n.renderedPosition('x'), 24);
+            const closestY = calcSnapLoc(n.renderedPosition('y'), 24);
+            n.renderedPosition({ x: closestX, y: closestY });
+            });
+        });
+        }
+    
+        // Recompute UI + autosave
+        const fullyConnected = updateConnected(cy.elements());
+        updateDegree(cy.elements(), fullyConnected);
+        updateTotalLength(cy.elements());
+        scheduleAutosave();
+    }
+  
 
 
     $('#downloadButton').click( function() {
