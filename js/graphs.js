@@ -11,51 +11,6 @@ $(function(){ // on dom ready
 
     $('#resetButton').hide();
 
-
-    // --- Persistence (autosave/restore) ---
-    const LOCAL_STORAGE_KEY = 'stabDesignerMinimalGraphV1';
-    var autosaveTimeoutId = null;
-
-    var exportMinimalGraph = function() {
-        var indices = {};
-        var minimalNodes = [];
-        cy.nodes().forEach(function(ele, i, eles) {
-            indices[ele.id()] = minimalNodes.length;
-            minimalNodes.push([ele.position('x'), ele.position('y')]);
-        });
-        var minimalEdges = [];
-        cy.edges().forEach(function(ele, i, eles) {
-            minimalEdges.push([indices[ele.source().id()], indices[ele.target().id()]]);
-        });
-        return [minimalNodes, minimalEdges];
-    };
-
-    var importMinimalGraph = function(minimalGraph) {
-        var newNodes = [];
-        var pushNode = function(x,y) {
-            newNodes.push(addNode(x, y));
-        };
-        minimalGraph[0].forEach(function(xy) { pushNode(xy[0], xy[1]); });
-        minimalGraph[1].forEach(function(src_dst) {
-            addEdge(newNodes[src_dst[0]], newNodes[src_dst[1]]).data("isVisited", true);
-        });
-    };
-
-    var scheduleAutosave = function() {
-        if (autosaveTimeoutId) {
-            clearTimeout(autosaveTimeoutId);
-        }
-        autosaveTimeoutId = setTimeout(function() {
-            try {
-                var minimal = exportMinimalGraph();
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(minimal));
-            } catch (e) {
-                // ignore storage errors (quota, etc.)
-                console.warn('Autosave failed:', e);
-            }
-        }, 400); // debounce saves
-    };
-
     $("#book-width").val($('#cy').width()/96);
     $("#book-height").val($('#cy').height()/96);
 
@@ -229,7 +184,7 @@ The full set of edit mode styles for nodes are:
         panningEnabled: false,
         userPanningEnabled: false,
         boxSelectionEnabled: true,
-        selectionType: 'additive',
+        selectionType: 'single',
 
         elements: {
             nodes: [ ],
@@ -433,10 +388,12 @@ The full set of edit mode styles for nodes are:
     };
 
     var deleteSelected = function() {
-        var selected = cy.$(':selected');
-        if(selected.length > 0) {
-            undoStack.push(cy.remove(selected[0].union(selected[0].connectedEdges())));
-        }
+        var sel = cy.$(':selected');
+        if (sel.empty()) return;
+    
+        // remove everything selected plus all edges incident to any selected nodes
+        var toRemove = sel.union(sel.nodes().connectedEdges());
+        undoStack.push(cy.remove(toRemove));
     };
 
     var clearAll = function() {
@@ -847,7 +804,7 @@ The full set of edit mode styles for nodes are:
 
     //
 
-    cy.on('tapstart', function(evt) {
+    cy.on('tap', function(evt) {
         if (evt.target === cy) { //clicked on background
             //console.log("clicked on background");
             if(editMode) { // in edit mode add a node
@@ -955,42 +912,49 @@ The full set of edit mode styles for nodes are:
         }
     };
 
-    $(document).keydown(function(e) {
-        // If user is typing in an input, ignore shortcuts
-        if ($('input:focus').length !== 0) return;
-    
-        if (editMode) {
-            const isMeta = e.ctrlKey || e.metaKey; // Ctrl on Win/Linux, Cmd on macOS
-    
-            // Delete / Backspace -> delete selection
-            if (e.keyCode === 46 || e.keyCode === 8) {
-                e.preventDefault();
-                deleteSelected();
-                return;
-            }
-    
-            // Space -> unselect all
-            if (e.keyCode === 32) {
-                e.preventDefault();
-                unselectAll();
-                return;
-            }
-    
-            // Cmd/Ctrl + D -> duplicate selection with a small offset
-            if (e.key === 'd' || e.keyCode === 68) {
-                e.preventDefault();
-                if (typeof duplicateSelection === 'function') {
-                    duplicateSelection(20, 20);
-                } else {
-                    console.warn('duplicateSelection(offsetX, offsetY) is not defined.');
-                }
-                return;
-            }
-        }
-    });
-    
+    // --- Persistence (autosave/restore) ---
+    const LOCAL_STORAGE_KEY = 'stabDesignerMinimalGraphV1';
+    var autosaveTimeoutId = null;
 
-    
+    var exportMinimalGraph = function() {
+        var indices = {};
+        var minimalNodes = [];
+        cy.nodes().forEach(function(ele, i, eles) {
+            indices[ele.id()] = minimalNodes.length;
+            minimalNodes.push([ele.position('x'), ele.position('y')]);
+        });
+        var minimalEdges = [];
+        cy.edges().forEach(function(ele, i, eles) {
+            minimalEdges.push([indices[ele.source().id()], indices[ele.target().id()]]);
+        });
+        return [minimalNodes, minimalEdges];
+    };
+
+    var importMinimalGraph = function(minimalGraph) {
+        var newNodes = [];
+        var pushNode = function(x,y) {
+            newNodes.push(addNode(x, y));
+        };
+        minimalGraph[0].forEach(function(xy) { pushNode(xy[0], xy[1]); });
+        minimalGraph[1].forEach(function(src_dst) {
+            addEdge(newNodes[src_dst[0]], newNodes[src_dst[1]]).data("isVisited", true);
+        });
+    };
+
+    var scheduleAutosave = function() {
+        if (autosaveTimeoutId) {
+            clearTimeout(autosaveTimeoutId);
+        }
+        autosaveTimeoutId = setTimeout(function() {
+            try {
+                var minimal = exportMinimalGraph();
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(minimal));
+            } catch (e) {
+                // ignore storage errors (quota, etc.)
+                console.warn('Autosave failed:', e);
+            }
+        }, 400); // debounce saves
+    };
 
     // Duplicate currently selected nodes (and edges between them) with an offset
     function duplicateSelection(offsetX = 20, offsetY = 20) {
@@ -1059,8 +1023,42 @@ The full set of edit mode styles for nodes are:
         updateTotalLength(cy.elements());
         scheduleAutosave();
     }
-  
 
+
+    $(document).keydown(function(e) {
+        // If user is typing in an input, ignore shortcuts
+        if ($('input:focus').length !== 0) return;
+    
+        if (editMode) {
+            const isMeta = e.ctrlKey || e.metaKey; // Ctrl on Win/Linux, Cmd on macOS
+    
+            // Delete / Backspace -> delete selection
+            if (e.keyCode === 46 || e.keyCode === 8) {
+                e.preventDefault();
+                deleteSelected();
+                return;
+            }
+    
+            // Space -> unselect all
+            if (e.keyCode === 32) {
+                e.preventDefault();
+                unselectAll();
+                return;
+            }
+    
+            // Cmd/Ctrl + D -> duplicate selection with a small offset
+            if (e.key === 'd' || e.keyCode === 68) {
+                e.preventDefault();
+                if (typeof duplicateSelection === 'function') {
+                    duplicateSelection(20, 20);
+                } else {
+                    console.warn('duplicateSelection(offsetX, offsetY) is not defined.');
+                }
+                return;
+            }
+        }
+    });
+    
 
     $('#downloadButton').click( function() {
         //console.log("download");
