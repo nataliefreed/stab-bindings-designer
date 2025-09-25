@@ -360,7 +360,7 @@ The full set of edit mode styles for nodes are:
         if(editMode) {
             $('#spine-length-multiplier').text((2.0 * totalEdgeLength + 1).toFixed(2));
             $('#hole-thread-multiplier').text(2.0 * numHoleStitches);
-            $('#total-length').text((2.0 * totalEdgeLength * user_spine + 2.0 * numHoleStitches * user_book_thickness).toFixed(2));
+            $('#total-length').text((2.0 * totalEdgeLength * user_spine + 2.0 * numHoleStitches * user_book_thickness).toFixed(1));
             //displayText.text('Total length of thread needed: ' + 2 * totalEdgeLength.toFixed(2) + ' * spine length + ' + 2 * numHoleStitches + ' * book thickness + a little more for needle');
         }
         else {
@@ -370,6 +370,7 @@ The full set of edit mode styles for nodes are:
             //displayText.text('Total length of thread needed: ' + totalEdgeLength.toFixed(2) + ' * spine length + ' + numHoleStitches + ' * book thickness + a little more for needle');
         }
     }
+
 
     $('#book-thickness').focusout(function() {
         updateTotalLength(cy.elements());
@@ -1294,6 +1295,6 @@ The full set of edit mode styles for nodes are:
     var fullyConnected = updateConnected(cy.elements());
     updateDegree(cy.elements(), fullyConnected);
 
-    drawGrid(24); //numCols, 6" with 1/4" spacing
+    drawGrid(48); //numCols, 6" with 1/8" spacing
 
 }); // on dom ready

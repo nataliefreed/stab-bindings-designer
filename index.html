@@ -29,7 +29,7 @@
 
 <div class="container">
 
-  <img src="images/title.png" alt="Stab Book Designer" style="width:80%;">
+  <img src="images/title.png" alt="Stab Book Designer" style="width:50%;">
 
   <!-- Nav tabs -->
   <ul class="nav nav-tabs top-space" role="tablist" data-tabs="tabs">
@@ -87,10 +87,10 @@
     <!--</div>-->
 
     <!--<div class="btn-group" role="group">-->
-      <button class="btn btn-success btn-l" id="saveButton">Save</button>
+      <button class="btn btn-success btn-l" id="saveButton">Download</button>
     <!--</div>-->
 
-    <span id="fileButton"><input type="file" id="selectFile" title="Upload File"></input></span>
+    <span id="fileButton"><input type="file" id="selectFile" title="Import"></input></span>
     <!--<span class="checkbox">-->
       <label class="checkbox-inline" id="snapToGridLabel"><input type="checkbox" value="" id="snapToGrid" checked>Snap to Grid</label>
     <!--</span>-->
@@ -99,25 +99,39 @@
 
   </div>
 
-    <div class="row clearfix top-space">
-      <div class="col-md-5 column top-space info-box" id="calculator">
-          <span>Total length of thread needed: </span>
-        <strong><span id="spine-length-multiplier"></span></strong>
-        <span> * </span>
-          <label>spine length
-          <input type="number" id="spine-length" value="7" name="spine-length"/>
-          </label>
-          <span> + </span>
-        <strong><span id="hole-thread-multiplier"></span></strong>
-          <span> * </span>
-        <label>book thickness
-          <input type="number" id="book-thickness" value="0.25" name="book-thickness" />
-         </label>
-          <span> = </span>
-          <strong><span id="total-length"></span></strong>
-      </div>
+<div class="row clearfix top-space">
+  <div class="col-md-5 column top-space info-box" id="calculator" role="group" aria-labelledby="calc-title">
 
+    <label for="spine-length" style="display:block; margin-bottom:.5rem;">
+      Book height (spine)
+      <input
+        type="text" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
+        id="spine-length" name="spine-length" value="7" placeholder="e.g., 7"
+        style="margin-left:.5rem; max-width:8ch;"
+        aria-describedby="spine-help"
+      />
+      <small id="spine-help" class="text-muted" style="display:block;">Measure from head to tail along the spine.</small>
+    </label>
+
+    <label for="book-thickness" style="display:block; margin-bottom:.75rem;">
+      Book thickness
+      <input
+        type="text" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
+        id="book-thickness" name="book-thickness" value="0.25" placeholder="e.g., 0.25"
+        style="margin-left:.5rem; max-width:8ch;"
+        aria-describedby="thickness-help"
+      />
+      <small id="thickness-help" class="text-muted" style="display:block;">Measure the thickness of the covers + text block.</small>
+    </label>
+
+    <div class="result" style="padding:.5rem; border:1px solid #eee; border-radius:6px;">
+      Estimated thread needed:
+      <strong><span id="total-length">—</span></strong>
+      <span class="text-muted"> (in the same units you used for your measurements above, eg. inches or cm) </span>
     </div>
+  </div>
+</div>
+
 
 <div class="row clearfix top-space">
   <div class="col-md-5 column top-space info-box instructions" id="drawing-instructions">
