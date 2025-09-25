@@ -1083,23 +1083,34 @@ The full set of edit mode styles for nodes are:
 
     $('#selectFile').change(function (){
 
-        var files = document.getElementById('selectFile').files; // FileList object
-        if(files.length != 1) {
-            // TODO: Tell user they tried to upload 0 or more than one files
-            return;
-        }
-        var fileToLoad = files[0];
-
+        var files = document.getElementById('selectFile').files;
+        if (files.length !== 1) return;
+    
         var fileReader = new FileReader();
-        fileReader.onload = function(fileLoadedEvent) {
-            var rawText = fileLoadedEvent.target.result;
-            var minimalGraph = JSON.parse(rawText);
-            importMinimalGraph(minimalGraph);
-            try { localStorage.setItem(LOCAL_STORAGE_KEY, rawText); } catch(e) {}
+        fileReader.onload = function(e) {
+            try {
+                var rawText = e.target.result;
+                var minimalGraph = JSON.parse(rawText);
+    
+                // Validate: must be an array with 2 parts, and at least one node or edge
+                if (Array.isArray(minimalGraph) &&
+                    minimalGraph.length >= 2 &&
+                    (minimalGraph[0].length > 0 || minimalGraph[1].length > 0)) {
+                    
+                    cy.elements().remove();
+                    importMinimalGraph(minimalGraph);
+    
+                    try { localStorage.setItem(LOCAL_STORAGE_KEY, rawText); } catch(e) {}
+                } else {
+                    console.warn("Skipped import: no nodes or edges in file.");
+                }
+            } catch (err) {
+                console.warn("Failed to import graph:", err);
+            }
         };
-        fileReader.readAsText(fileToLoad, "UTF-8");
-
-        $('#selectFile').val(''); //reset so that file handler will trigger again on same file
+        fileReader.readAsText(files[0], "UTF-8");
+    
+        $('#selectFile').val('');
     });
 
     $('#deleteButton').click( function() {
